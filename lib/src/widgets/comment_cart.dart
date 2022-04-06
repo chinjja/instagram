@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/comment.dart';
 import 'package:instagram/src/models/user.dart';
+import 'package:instagram/src/pages/profile_page.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -31,12 +32,15 @@ class _CommentCardState extends State<CommentCard> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: CircleAvatar(
-                    radius: 16,
-                    backgroundImage:
-                        photoUrl == null ? null : NetworkImage(photoUrl),
+                GestureDetector(
+                  onTap: _showProfile,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: CircleAvatar(
+                      radius: 16,
+                      backgroundImage:
+                          photoUrl == null ? null : NetworkImage(photoUrl),
+                    ),
                   ),
                 ),
                 Expanded(
@@ -82,4 +86,14 @@ class _CommentCardState extends State<CommentCard> {
   }
 
   void _like() {}
+
+  void _showProfile() async {
+    final user = await _firestore.user(uid: widget.comment.uid).first;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProfilePage(user: user),
+      ),
+    );
+  }
 }

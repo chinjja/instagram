@@ -48,7 +48,7 @@ class _CommentPageState extends State<CommentPage> {
                       );
                     }
                     final comments = snapshot.data ?? [];
-                    return ListView.separated(
+                    return ListView.builder(
                       itemCount: comments.length,
                       itemBuilder: (context, index) {
                         final comment = comments[index];
@@ -56,9 +56,6 @@ class _CommentPageState extends State<CommentPage> {
                           key: ValueKey(comment.id),
                           comment: comment,
                         );
-                      },
-                      separatorBuilder: (context, index) {
-                        return const Divider();
                       },
                     );
                   }),
