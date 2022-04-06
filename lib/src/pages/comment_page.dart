@@ -48,7 +48,7 @@ class _CommentPageState extends State<CommentPage> {
                       );
                     }
                     final comments = snapshot.data ?? [];
-                    return ListView.separated(
+                    return ListView.builder(
                       itemCount: comments.length,
                       itemBuilder: (context, index) {
                         final comment = comments[index];
@@ -57,72 +57,76 @@ class _CommentPageState extends State<CommentPage> {
                           comment: comment,
                         );
                       },
-                      separatorBuilder: (context, index) {
-                        return const Divider();
-                      },
                     );
                   }),
             ),
-            StatefulBuilder(builder: (context, setState) {
-              return Padding(
-                padding: const EdgeInsets.only(left: 12, bottom: 4),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundImage: widget.user.photoUrl == null
-                          ? null
-                          : NetworkImage(widget.user.photoUrl!),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Container(
-                        decoration: const ShapeDecoration(
-                          shape: StadiumBorder(
-                            side: BorderSide(color: Colors.grey),
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        child: TextField(
-                          controller: _text,
-                          onChanged: (text) {
-                            setState(() {});
-                          },
-                          autofocus: widget.autoFocus,
-                          decoration: const InputDecoration.collapsed(
-                            hintText: '댓글 달기...',
-                          ),
-                        ),
-                      ),
-                    ),
-                    TextButton(
-                      child: const Text('게시'),
-                      onPressed: _text.text.isEmpty
-                          ? null
-                          : () async {
-                              _firestore.postComment(
-                                post: widget.post,
-                                user: widget.user,
-                                text: _text.text,
-                              );
-                              setState(
-                                () {
-                                  _text.text = '';
-                                },
-                              );
-                            },
-                    ),
-                  ],
-                ),
-              );
-            }),
+            _bottomTextField(),
           ],
         ),
       ),
     );
+  }
+
+  Widget _bottomTextField() {
+    return StatefulBuilder(builder: (context, setState) {
+      return Padding(
+        padding: const EdgeInsets.only(
+          left: 12,
+          right: 12,
+          bottom: 4,
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundImage: widget.user.photoUrl == null
+                  ? null
+                  : NetworkImage(widget.user.photoUrl!),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: _text,
+                onChanged: (text) {
+                  setState(() {});
+                },
+                autofocus: widget.autoFocus,
+                decoration: InputDecoration(
+                  hintText: '댓글 달기...',
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                  ),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(100)),
+                  suffix: InkWell(
+                    child: Text(
+                      '게시',
+                      style: TextStyle(
+                        color: _text.text.isEmpty ? Colors.grey : Colors.blue,
+                      ),
+                    ),
+                    onTap: _text.text.isEmpty
+                        ? null
+                        : () async {
+                            _firestore.postComment(
+                              post: widget.post,
+                              user: widget.user,
+                              text: _text.text,
+                            );
+                            setState(
+                              () {
+                                _text.text = '';
+                              },
+                            );
+                          },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   void _message() {}

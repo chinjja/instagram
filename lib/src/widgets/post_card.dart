@@ -40,9 +40,9 @@ class _PostCardState extends State<PostCard> {
                     GestureDetector(
                       onTap: _showProfile,
                       child: Padding(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(8),
                         child: CircleAvatar(
-                          radius: 16,
+                          radius: 18,
                           backgroundImage: userImage == null
                               ? null
                               : NetworkImage(userImage),
