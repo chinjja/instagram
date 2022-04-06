@@ -61,10 +61,25 @@ class _AddPostPageState extends State<AddPostPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                SizedBox(
-                  width: 100,
-                  height: 100,
-                  child: _image == null ? null : Image.memory(_image!),
+                InkWell(
+                  onTap: () async {
+                    final image = await pickImageData(ImageSource.gallery);
+                    if (image != null) {
+                      setState(() {
+                        _image = image;
+                      });
+                    }
+                  },
+                  child: SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: _image == null
+                        ? Container(
+                            child: const Icon(Icons.upload),
+                            decoration: BoxDecoration(border: Border.all()),
+                          )
+                        : Image.memory(_image!),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -102,6 +117,10 @@ class _AddPostPageState extends State<AddPostPage> {
   }
 
   void _post() async {
+    if (_image == null) {
+      showSnackbar(context, '사진을 선택을 해주세요.');
+      return;
+    }
     setState(() {
       _uploading = true;
     });
