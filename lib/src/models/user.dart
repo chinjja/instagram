@@ -6,6 +6,7 @@ class User {
   final String username;
   final String? state;
   final String? photoUrl;
+  final String? token;
 
   const User({
     required this.email,
@@ -13,6 +14,7 @@ class User {
     this.photoUrl,
     required this.username,
     this.state,
+    this.token,
   });
 
   Map<String, dynamic> toJson() => {
@@ -21,6 +23,7 @@ class User {
         'uid': uid,
         'email': email,
         'photoUrl': photoUrl,
+        'token': token,
       };
 
   static User fromSnapshot(DocumentSnapshot snapshot) {
@@ -31,6 +34,7 @@ class User {
       uid: data['uid'],
       email: data['email'],
       photoUrl: data['photoUrl'],
+      token: data['token'],
     );
   }
 }

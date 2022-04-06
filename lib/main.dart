@@ -10,6 +10,7 @@ import 'package:instagram/src/pages/home_page.dart';
 import 'package:instagram/src/pages/welcome.dart';
 import 'package:instagram/src/resources/auth_methods.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
+import 'package:instagram/src/resources/messaging_methods.dart';
 import 'package:instagram/src/resources/storage_methods.dart';
 import 'package:provider/provider.dart';
 
@@ -63,7 +64,8 @@ Future<void> onBackgroundMessage(RemoteMessage message) async {
 }
 
 final _storage = StorageMethods();
-final _firestore = FirestoreMethods(storage: _storage);
+final _messaging = MessagingMethods();
+final _firestore = FirestoreMethods(storage: _storage, messaging: _messaging);
 final _auth = AuthMethods(storage: _storage, firestore: _firestore);
 
 class MyApp extends StatefulWidget {
@@ -78,9 +80,6 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     FirebaseMessaging.instance.requestPermission();
-    FirebaseMessaging.instance
-        .getToken()
-        .then((value) => log(value.toString()));
     FirebaseMessaging.instance.getInitialMessage().then((message) {
       log('initial message: ${message?.data}');
     });
@@ -97,8 +96,6 @@ class _MyAppState extends State<MyApp> {
               channel.id,
               channel.name,
               channelDescription: channel.description,
-              // TODO add a proper drawable resource to android, for now using
-              //      one that already exists in example app.
               icon: 'launch_background',
             ),
           ),
@@ -109,6 +106,13 @@ class _MyAppState extends State<MyApp> {
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       log('on message opended app ${message.data}');
     });
+    FirebaseAuth.instance.authStateChanges().listen((user) async {
+      if (user != null) {
+        final token = await _messaging.token;
+        log('update token: $token');
+        _firestore.updateToken(uid: user.uid, token: token);
+      }
+    });
   }
 
   @override
@@ -118,6 +122,7 @@ class _MyAppState extends State<MyApp> {
         Provider.value(value: _storage),
         Provider.value(value: _firestore),
         Provider.value(value: _auth),
+        Provider.value(value: _messaging),
       ],
       child: MaterialApp(
         title: 'Instagram Demo',

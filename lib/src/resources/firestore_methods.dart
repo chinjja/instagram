@@ -6,14 +6,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:instagram/src/models/comment.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart' as model;
+import 'package:instagram/src/resources/messaging_methods.dart';
 import 'package:instagram/src/resources/storage_methods.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
 
 class FirestoreMethods {
-  FirestoreMethods({required this.storage});
+  FirestoreMethods({required this.storage, required this.messaging});
   final _firestore = FirebaseFirestore.instance;
   final StorageMethods storage;
+  final MessagingMethods messaging;
 
   Stream<List<Post>> posts([List<String> uidList = const []]) {
     var query = _firestore
@@ -271,13 +273,24 @@ class FirestoreMethods {
         .where('uid', isEqualTo: user.uid)
         .get();
     if (data.docs.isEmpty) {
-      log('${user.email} is empty');
+      log('${user.email} is created');
+      final token = await messaging.token;
       await _firestore.collection('users').doc(user.uid).set(model.User(
             email: user.email!,
             uid: user.uid,
             photoUrl: user.photoURL,
             username: user.displayName ?? user.email!,
+            token: token,
           ).toJson());
     }
+  }
+
+  Future<void> updateToken({
+    required String uid,
+    required String? token,
+  }) async {
+    await _firestore.collection('users').doc(uid).update({
+      'token': token,
+    });
   }
 }
