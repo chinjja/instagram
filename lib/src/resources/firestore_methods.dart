@@ -92,7 +92,6 @@ class FirestoreMethods {
         postId: postId,
         datePublished: DateTime.now(),
         postUrl: photoUrl,
-        likes: [],
       );
 
       final batch = _firestore.batch();
@@ -107,19 +106,31 @@ class FirestoreMethods {
     }
   }
 
+  Stream<List<String>> likes({required Post post}) {
+    return _firestore
+        .collection('posts')
+        .doc(post.postId)
+        .collection('likes')
+        .snapshots()
+        .flatMap((value) => Stream.fromIterable(value.docs)
+            .map((event) => event['uid'] as String)
+            .toList()
+            .asStream());
+  }
+
   Future<void> likePost({required Post post, required model.User user}) async {
     try {
-      final ref = _firestore.collection('posts').doc(post.postId);
+      final ref = _firestore
+          .collection('posts')
+          .doc(post.postId)
+          .collection('likes')
+          .doc(user.uid);
       await _firestore.runTransaction((transaction) async {
-        final postUser = Post.fromSnapshot(await transaction.get(ref));
-        if (postUser.likes.contains(user.uid)) {
-          transaction.update(ref, {
-            'likes': FieldValue.arrayRemove([user.uid]),
-          });
+        final like = await transaction.get(ref);
+        if (like.exists) {
+          transaction.delete(ref);
         } else {
-          transaction.update(ref, {
-            'likes': FieldValue.arrayUnion([user.uid]),
-          });
+          transaction.set(ref, {'uid': user.uid});
         }
       });
     } catch (e) {
@@ -168,28 +179,53 @@ class FirestoreMethods {
     }
   }
 
-  Future<void> followUser(String user, String target) async {
+  Stream<List<String>> followers({required String uid}) {
+    return _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('followers')
+        .snapshots()
+        .flatMap((event) => Stream.fromIterable(event.docs)
+            .map((event) => event['uid'] as String)
+            .toList()
+            .asStream());
+  }
+
+  Stream<List<String>> following({required String uid}) {
+    return _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('following')
+        .snapshots()
+        .flatMap((event) => Stream.fromIterable(event.docs)
+            .map((event) => event['uid'] as String)
+            .toList()
+            .asStream());
+  }
+
+  Future<void> follow({
+    required String uid,
+    required String to,
+  }) async {
     try {
       await _firestore.runTransaction((transaction) async {
-        final userRef = _firestore.collection('users').doc(user);
-        final targetRef = _firestore.collection('users').doc(target);
-
-        final targetProfile =
-            model.User.fromSnapshot(await transaction.get(targetRef));
-        if (targetProfile.followers.contains(user)) {
-          transaction.update(userRef, {
-            'following': FieldValue.arrayRemove([target]),
-          });
-          transaction.update(targetRef, {
-            'followers': FieldValue.arrayRemove([user]),
-          });
+        final followers = _firestore
+            .collection('users')
+            .doc(to)
+            .collection('followers')
+            .doc(uid);
+        final following = _firestore
+            .collection('users')
+            .doc(uid)
+            .collection('following')
+            .doc(to);
+        final isFollow = await transaction.get(followers);
+        if (isFollow.exists) {
+          transaction.delete(followers);
+          transaction.delete(following);
         } else {
-          transaction.update(userRef, {
-            'following': FieldValue.arrayUnion([target]),
-          });
-          transaction.update(targetRef, {
-            'followers': FieldValue.arrayUnion([user]),
-          });
+          transaction.set(followers, {'uid': uid});
+          transaction.set(following, {'uid': to});
         }
       });
     } catch (e) {
@@ -237,12 +273,11 @@ class FirestoreMethods {
     if (data.docs.isEmpty) {
       log('${user.email} is empty');
       await _firestore.collection('users').doc(user.uid).set(model.User(
-          email: user.email!,
-          uid: user.uid,
-          photoUrl: user.photoURL,
-          username: user.displayName ?? user.email!,
-          followers: [],
-          following: []).toJson());
+            email: user.email!,
+            uid: user.uid,
+            photoUrl: user.photoURL,
+            username: user.displayName ?? user.email!,
+          ).toJson());
     }
   }
 }

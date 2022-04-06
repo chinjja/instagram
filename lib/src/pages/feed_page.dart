@@ -5,6 +5,7 @@ import 'package:instagram/src/pages/add_post_page.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/widgets/post_card.dart';
 import 'package:provider/provider.dart';
+import 'package:rxdart/rxdart.dart';
 
 class FeedPage extends StatefulWidget {
   const FeedPage({
@@ -34,7 +35,9 @@ class _FeedPageState extends State<FeedPage> {
         ],
       ),
       body: StreamBuilder<List<Post>>(
-        stream: _firestore.posts([user.uid, ...user.following]),
+        stream: _firestore
+            .following(uid: user.uid)
+            .flatMap((e) => _firestore.posts([user.uid, ...e])),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(

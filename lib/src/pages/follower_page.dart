@@ -8,9 +8,13 @@ class FollowPage extends StatefulWidget {
   const FollowPage({
     Key? key,
     required this.user,
+    required this.followers,
+    required this.following,
     required this.showFollows,
   }) : super(key: key);
   final User user;
+  final List<String> followers;
+  final List<String> following;
   final bool showFollows;
 
   @override
@@ -32,14 +36,14 @@ class _FollowPageState extends State<FollowPage> {
           title: Text(widget.user.username),
           bottom: TabBar(
             tabs: [
-              Tab(text: '${user.followers.length} 팔로워'),
-              Tab(text: '${user.following.length} 팔로잉'),
+              Tab(text: '${widget.followers.length} 팔로워'),
+              Tab(text: '${widget.following.length} 팔로잉'),
             ],
           ),
         ),
         body: TabBarView(children: [
-          _page(user.followers, '팔로워가 없습니다.'),
-          _page(user.following, '팔로잉이 없습니다.'),
+          _page(widget.followers, '팔로워가 없습니다.'),
+          _page(widget.following, '팔로잉이 없습니다.'),
         ]),
       ),
     );

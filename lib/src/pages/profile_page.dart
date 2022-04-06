@@ -8,6 +8,8 @@ import 'package:instagram/src/pages/welcome.dart';
 import 'package:instagram/src/resources/auth_methods.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:provider/provider.dart';
+import 'package:rxdart/rxdart.dart';
+import 'package:tuple/tuple.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({
@@ -23,23 +25,29 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late final _auth = context.read<AuthMethods>();
   late final _firestore = context.read<FirestoreMethods>();
-  final _postGrid = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<model.User>(
-        initialData: widget.user,
-        stream: _firestore.user(uid: widget.user.uid),
+    return StreamBuilder<Tuple3<model.User, List<String>, List<String>>>(
+        stream: Rx.combineLatest3(
+          _firestore.user(uid: widget.user.uid),
+          _firestore.followers(uid: widget.user.uid),
+          _firestore.following(uid: widget.user.uid),
+          (model.User user, List<String> a, List<String> b) =>
+              Tuple3(user, a, b),
+        ),
         builder: (context, snapshot) {
-          final user = snapshot.data;
-          if (user == null) {
+          final user = snapshot.data?.item1;
+          final followers = snapshot.data?.item2 ?? [];
+          final following = snapshot.data?.item3 ?? [];
+          final curUid = FirebaseAuth.instance.currentUser?.uid;
+          if (user == null || curUid == null) {
             return const Center(
               child: CircularProgressIndicator(),
             );
           }
-          final isOnwer = user.uid == FirebaseAuth.instance.currentUser?.uid;
-          final isFollowing =
-              user.followers.contains(FirebaseAuth.instance.currentUser!.uid);
+          final isOnwer = user.uid == curUid;
+          final isFollowing = followers.contains(curUid);
 
           return Scaffold(
             appBar: AppBar(
@@ -86,17 +94,27 @@ class _ProfilePageState extends State<ProfilePage> {
                                     name: '게시물',
                                   ),
                                   _tap(
-                                    value: user.followers.length,
+                                    value: followers.length,
                                     name: '팔로워',
                                     onTap: () {
-                                      _showFollows(user, true);
+                                      _showFollows(
+                                        user: user,
+                                        followers: followers,
+                                        following: following,
+                                        showFollows: true,
+                                      );
                                     },
                                   ),
                                   _tap(
-                                    value: user.following.length,
+                                    value: following.length,
                                     name: '팔로잉',
                                     onTap: () {
-                                      _showFollows(user, false);
+                                      _showFollows(
+                                        user: user,
+                                        followers: followers,
+                                        following: following,
+                                        showFollows: false,
+                                      );
                                     },
                                   ),
                                 ],
@@ -126,8 +144,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                     color: isFollowing ? null : Colors.blue,
                                     onTap: () {
                                       _toggleFollows(
-                                        FirebaseAuth.instance.currentUser!.uid,
-                                        user.uid,
+                                        uid: curUid,
+                                        to: user.uid,
                                       );
                                     },
                                   ),
@@ -139,7 +157,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     SliverGrid(
-                      key: _postGrid,
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final post = posts[index];
@@ -216,8 +233,11 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _toggleFollows(String user, String target) {
-    _firestore.followUser(user, target);
+  void _toggleFollows({
+    required String uid,
+    required String to,
+  }) {
+    _firestore.follow(uid: uid, to: to);
   }
 
   void _signOut() async {
@@ -228,12 +248,19 @@ class _ProfilePageState extends State<ProfilePage> {
         (route) => false);
   }
 
-  void _showFollows(model.User user, bool showFollows) {
+  void _showFollows({
+    required model.User user,
+    required List<String> followers,
+    required List<String> following,
+    required bool showFollows,
+  }) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => FollowPage(
           user: user,
+          followers: followers,
+          following: following,
           showFollows: showFollows,
         ),
       ),

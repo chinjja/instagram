@@ -7,6 +7,8 @@ import 'package:instagram/src/pages/profile_page.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:rxdart/rxdart.dart';
+import 'package:tuple/tuple.dart';
 
 class PostCard extends StatefulWidget {
   const PostCard({
@@ -25,12 +27,19 @@ class _PostCardState extends State<PostCard> {
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
-    final like = post.likes.contains(widget.user.uid);
-    return FutureBuilder<User>(
-        future: _firestore.user(uid: post.uid).first,
+    return StreamBuilder<Tuple2<User, List<String>>>(
+        stream: Rx.combineLatest2(
+          _firestore.user(uid: post.uid),
+          _firestore.likes(post: post),
+          (User a, List<String> b) => Tuple2(a, b),
+        ),
         builder: (context, snapshot) {
-          final userImage = snapshot.data?.photoUrl;
-          final username = snapshot.data?.username ?? '';
+          final data = snapshot.data;
+          final user = data?.item1;
+          final userImage = user?.photoUrl;
+          final username = user?.username ?? '';
+          final likes = data?.item2 ?? [];
+          final like = likes.contains(widget.user.uid);
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
@@ -108,7 +117,7 @@ class _PostCardState extends State<PostCard> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Text('${post.likes.length} likes'),
+                        child: Text('${likes.length} likes'),
                       ),
                       if (post.description.isNotEmpty)
                         Padding(
