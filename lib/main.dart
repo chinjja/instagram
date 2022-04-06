@@ -1,7 +1,11 @@
+import 'dart:developer';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:instagram/src/pages/home_page.dart';
 import 'package:instagram/src/pages/welcome.dart';
 import 'package:instagram/src/resources/auth_methods.dart';
@@ -22,17 +26,91 @@ void main() async {
         authDomain: 'instagram-21e39.firebaseapp.com');
   }
   await Firebase.initializeApp(options: options);
+  FirebaseMessaging.onBackgroundMessage(onBackgroundMessage);
+  if (!kIsWeb) {
+    channel = const AndroidNotificationChannel(
+      'high_importance_channel', // id
+      'High Importance Notifications', // title
+      description:
+          'This channel is used for important notifications.', // description
+      importance: Importance.high,
+    );
+
+    flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+    /// Create an Android Notification Channel.
+    ///
+    /// We use this channel in the `AndroidManifest.xml` file to override the
+    /// default FCM channel to enable heads up notifications.
+    flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+    FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+  }
   runApp(const MyApp());
+}
+
+late AndroidNotificationChannel channel;
+late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+
+Future<void> onBackgroundMessage(RemoteMessage message) async {
+  log('onBackgroundMessage ${message.from}');
 }
 
 final _storage = StorageMethods();
 final _firestore = FirestoreMethods(storage: _storage);
 final _auth = AuthMethods(storage: _storage, firestore: _firestore);
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    FirebaseMessaging.instance.requestPermission();
+    FirebaseMessaging.instance
+        .getToken()
+        .then((value) => log(value.toString()));
+    FirebaseMessaging.instance.getInitialMessage().then((message) {
+      log('initial message: ${message?.data}');
+    });
+    FirebaseMessaging.onMessage.listen((message) {
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? android = message.notification?.android;
+      if (notification != null && android != null && !kIsWeb) {
+        flutterLocalNotificationsPlugin.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              channel.id,
+              channel.name,
+              channelDescription: channel.description,
+              // TODO add a proper drawable resource to android, for now using
+              //      one that already exists in example app.
+              icon: 'launch_background',
+            ),
+          ),
+        );
+      }
+      log('on message ${message.data}');
+    });
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      log('on message opended app ${message.data}');
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
