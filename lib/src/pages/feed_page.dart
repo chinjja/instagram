@@ -17,11 +17,13 @@ class FeedPage extends StatefulWidget {
   State<FeedPage> createState() => _FeedPageState();
 }
 
-class _FeedPageState extends State<FeedPage> {
+class _FeedPageState extends State<FeedPage>
+    with AutomaticKeepAliveClientMixin {
   late final _firestore = context.read<FirestoreMethods>();
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final user = widget.user;
 
     return Scaffold(
@@ -39,15 +41,15 @@ class _FeedPageState extends State<FeedPage> {
             .following(uid: user.uid)
             .flatMap((e) => _firestore.posts([user.uid, ...e])),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          final posts = snapshot.data;
+          if (posts == null) {
             return const Center(
               child: CircularProgressIndicator(),
             );
           }
-          final posts = snapshot.data ?? [];
           if (posts.isEmpty) {
             return const Center(
-              child: Text('포스트가 없습니다. 팔로잉을 하세요.'),
+              child: Text('게시물이 없습니다. 팔로잉을 하세요.'),
             );
           }
           return RefreshIndicator(
@@ -85,4 +87,7 @@ class _FeedPageState extends State<FeedPage> {
   void _refresh() {
     setState(() {});
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }

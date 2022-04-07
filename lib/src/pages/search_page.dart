@@ -11,12 +11,14 @@ class SearchPage extends StatefulWidget {
   State<SearchPage> createState() => _SearchPageState();
 }
 
-class _SearchPageState extends State<SearchPage> {
+class _SearchPageState extends State<SearchPage>
+    with AutomaticKeepAliveClientMixin {
   late final _firestore = context.read<FirestoreMethods>();
   final _searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       appBar: AppBar(
         title: TextField(
@@ -33,13 +35,12 @@ class _SearchPageState extends State<SearchPage> {
       body: StreamBuilder<List<User>>(
         stream: _firestore.users(username: _searchController.text),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          final users = snapshot.data;
+          if (users == null) {
             return const Center(
               child: CircularProgressIndicator(),
             );
           }
-
-          final users = snapshot.data ?? [];
           return ListView.builder(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             itemCount: users.length,
@@ -55,4 +56,7 @@ class _SearchPageState extends State<SearchPage> {
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }

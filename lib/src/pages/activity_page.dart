@@ -7,7 +7,8 @@ class ActivityPage extends StatefulWidget {
   State<ActivityPage> createState() => _ActivityPageState();
 }
 
-class _ActivityPageState extends State<ActivityPage> {
+class _ActivityPageState extends State<ActivityPage>
+    with AutomaticKeepAliveClientMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -19,4 +20,7 @@ class _ActivityPageState extends State<ActivityPage> {
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }

@@ -4,6 +4,7 @@ import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart' as model;
 import 'package:instagram/src/pages/edit_profile_page.dart';
 import 'package:instagram/src/pages/follower_page.dart';
+import 'package:instagram/src/pages/post_list_page.dart';
 import 'package:instagram/src/pages/welcome.dart';
 import 'package:instagram/src/resources/auth_methods.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
@@ -22,12 +23,14 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends State<ProfilePage>
+    with AutomaticKeepAliveClientMixin {
   late final _auth = context.read<AuthMethods>();
   late final _firestore = context.read<FirestoreMethods>();
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return StreamBuilder<Tuple3<model.User, List<String>, List<String>>>(
         stream: Rx.combineLatest3(
           _firestore.user(uid: widget.user.uid),
@@ -163,9 +166,14 @@ class _ProfilePageState extends State<ProfilePage> {
                           return AspectRatio(
                             key: ValueKey(post.postId),
                             aspectRatio: 1,
-                            child: Image.network(
-                              post.postUrl,
-                              fit: BoxFit.cover,
+                            child: GestureDetector(
+                              onTap: () {
+                                _feed(user, posts);
+                              },
+                              child: Image.network(
+                                post.postUrl,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           );
                         },
@@ -184,6 +192,21 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           );
         });
+  }
+
+  void _feed(model.User user, List<Post> posts) async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StreamBuilder<List<Post>>(
+          initialData: posts,
+          stream: _firestore.posts([user.uid]),
+          builder: (context, snapshot) {
+            return PostListPage(user: user, posts: posts);
+          },
+        ),
+      ),
+    );
   }
 
   Widget _tap(
@@ -266,4 +289,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }
