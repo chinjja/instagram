@@ -217,9 +217,21 @@ class FirestoreMethods {
 
   Future<void> deletePost(Post post) async {
     try {
-      await _firestore.collection('posts').doc(post.postId).delete();
+      final postRef = _firestore.collection('posts').doc(post.postId);
+      _deleteCollection(postRef, 'likes');
+      _deleteCollection(postRef, 'bookmarks');
+      _deleteCollection(postRef, 'comments');
+      await postRef.delete();
     } catch (e) {
       log(e.toString());
+    }
+  }
+
+  Future<void> _deleteCollection(DocumentReference ref, String id) async {
+    final collectionRef = ref.collection(id);
+    final snapshot = await collectionRef.get();
+    for (final doc in snapshot.docs) {
+      collectionRef.doc(doc.id).delete();
     }
   }
 
