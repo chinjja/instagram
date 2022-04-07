@@ -81,10 +81,13 @@ class _PostCardState extends State<PostCard> {
                   color: Colors.black,
                   constraints: const BoxConstraints(
                     minHeight: 200,
-                    maxHeight: 400,
+                    maxHeight: 500,
                   ),
                   child: Image.network(
                     post.postUrl,
+                    fit: BoxFit.fitHeight,
+                    width: post.width?.toDouble(),
+                    height: post.height?.toDouble(),
                   ),
                 ),
                 Row(

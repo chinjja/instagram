@@ -80,7 +80,7 @@ class FirestoreMethods {
     try {
       description = description.trim();
       final postId = const Uuid().v1();
-      final photoUrl = await storage.uploadImageData(
+      final photo = await storage.uploadImageData(
         file,
         'posts',
         postId,
@@ -91,7 +91,9 @@ class FirestoreMethods {
         uid: user.uid,
         postId: postId,
         datePublished: DateTime.now(),
-        postUrl: photoUrl,
+        postUrl: photo.url,
+        width: photo.width,
+        height: photo.height,
       );
 
       final batch = _firestore.batch();

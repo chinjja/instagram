@@ -6,6 +6,8 @@ class Post {
   final String postId;
   final DateTime datePublished;
   final String postUrl;
+  final int? width;
+  final int? height;
 
   const Post({
     required this.description,
@@ -13,6 +15,8 @@ class Post {
     required this.postId,
     required this.datePublished,
     required this.postUrl,
+    this.width,
+    this.height,
   });
 
   Map<String, dynamic> toJson() => {
@@ -21,6 +25,8 @@ class Post {
         'postId': postId,
         'datePublished': datePublished.toIso8601String(),
         'postUrl': postUrl,
+        'width': width,
+        'height': height,
       };
 
   static Post fromSnapshot(DocumentSnapshot snapshot) {
@@ -31,6 +37,8 @@ class Post {
       postId: data['postId'],
       datePublished: DateTime.parse(data['datePublished']),
       postUrl: data['postUrl'],
+      width: data['width'],
+      height: data['height'],
     );
   }
 }

@@ -4,10 +4,21 @@ import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image/image.dart';
 
+class UploadImageResult {
+  const UploadImageResult({
+    required this.url,
+    required this.width,
+    required this.height,
+  });
+  final String url;
+  final int width;
+  final int height;
+}
+
 class StorageMethods {
   final _storage = FirebaseStorage.instance;
 
-  Future<String> uploadImageData(
+  Future<UploadImageResult> uploadImageData(
     Uint8List data,
     String path,
     String name, [
@@ -30,10 +41,15 @@ class StorageMethods {
         interpolation: interpolation,
       );
     }
-    return uploadData(
+    final url = await uploadData(
       Uint8List.fromList(encodeJpg(img, quality: 75)),
       path,
       name,
+    );
+    return UploadImageResult(
+      url: url,
+      width: img.width,
+      height: img.height,
     );
   }
 
