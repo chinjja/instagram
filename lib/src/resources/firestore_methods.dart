@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -26,24 +27,29 @@ class FirestoreMethods {
         .map((doc) => Post.fromSnapshot(doc));
   }
 
-  Stream<List<Post>> posts([List<String> uidList = const []]) {
-    var query = _firestore
-        .collection('posts')
-        .orderBy('datePublished', descending: true);
-    if (uidList.isNotEmpty) {
-      query = query.where('uid', whereIn: uidList);
+  Stream<List<Post>> posts(List<String> uidList) {
+    final streams = <Stream<List<Post>>>[];
+    int i = 0;
+    while (i < uidList.length) {
+      final len = math.min(10, uidList.length - i);
+      streams.add(_posts(uidList.sublist(i, i + len)));
+      i += len;
     }
-
-    return query.snapshots().flatMap((e) => Stream.fromIterable(e.docs)
-        .map((data) => Post.fromSnapshot(data))
-        .toList()
-        .asStream());
+    if (streams.isEmpty) return const Stream.empty();
+    return Rx.combineLatest(streams, (List<List<Post>> list) {
+      final result = <Post>[];
+      for (final l in list) {
+        result.addAll(l);
+      }
+      return result;
+    });
   }
 
-  Stream<List<Post>> postsByPostId(List<String> postIdList) {
+  Stream<List<Post>> _posts(List<String> uidList) {
     return _firestore
         .collection('posts')
-        .where('postId', whereIn: postIdList)
+        .where('uid', whereIn: uidList)
+        .orderBy('datePublished', descending: true)
         .snapshots()
         .flatMap((e) => Stream.fromIterable(e.docs)
             .map((data) => Post.fromSnapshot(data))
@@ -63,6 +69,24 @@ class FirestoreMethods {
   }
 
   Stream<List<model.User>> usersByUidList(List<String> uidList) {
+    final streams = <Stream<List<model.User>>>[];
+    int i = 0;
+    while (i < uidList.length) {
+      final len = math.min(10, uidList.length - i);
+      streams.add(_usersByUidList(uidList.sublist(i, i + len)));
+      i += len;
+    }
+    if (streams.isEmpty) return const Stream.empty();
+    return Rx.combineLatest(streams, (List<List<model.User>> list) {
+      final result = <model.User>[];
+      for (final l in list) {
+        result.addAll(l);
+      }
+      return result;
+    });
+  }
+
+  Stream<List<model.User>> _usersByUidList(List<String> uidList) {
     return _firestore
         .collection('users')
         .where('uid', whereIn: uidList)
@@ -114,8 +138,7 @@ class FirestoreMethods {
         postId: postId,
         datePublished: DateTime.now(),
         postUrl: photo.url,
-        width: photo.width,
-        height: photo.height,
+        aspectRatio: photo.width / photo.height,
       );
 
       final batch = _firestore.batch();
@@ -222,6 +245,7 @@ class FirestoreMethods {
       _deleteCollection(postRef, 'bookmarks');
       _deleteCollection(postRef, 'comments');
       await postRef.delete();
+      await storage.delete('posts', post.postId);
     } catch (e) {
       log(e.toString());
     }
@@ -295,29 +319,22 @@ class FirestoreMethods {
     String? username,
     String? state,
   }) async {
-    final batch = _firestore.batch();
-    final ref = _firestore.collection('users').doc(user.uid);
+    final data = <String, Object?>{};
     if (photo != null) {
-      final photoUrl = await storage.uploadImageData(
+      final result = await storage.uploadImageData(
         photo,
         'profile/photo',
         user.uid,
       );
-      batch.update(ref, {
-        'photoUrl': photoUrl,
-      });
+      data['photoUrl'] = result.url;
     }
     if (username != null) {
-      username = username.trim();
-      batch.update(ref, {
-        'username': username,
-      });
+      data['username'] = username;
     }
     if (state != null) {
-      state = state.trim();
-      batch.update(ref, {'state': state});
+      data['state'] = state;
     }
-    await batch.commit();
+    await _firestore.collection('users').doc(user.uid).update(data);
   }
 
   Future<void> initUser(UserCredential credential) async {

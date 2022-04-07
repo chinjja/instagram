@@ -22,7 +22,7 @@ class StorageMethods {
     Uint8List data,
     String path,
     String name, [
-    Interpolation interpolation = Interpolation.linear,
+    Interpolation interpolation = Interpolation.average,
     int size = 500,
   ]) async {
     var img = decodeImage(data)!;
@@ -54,14 +54,18 @@ class StorageMethods {
   }
 
   Future<String> uploadData(Uint8List data, String path, String name) async {
-    final ref = _storage.ref().child(path).child(name);
+    final ref = _storage.ref(path).child(name);
     final snapshot = await ref.putData(data);
     return await snapshot.ref.getDownloadURL();
   }
 
   Future<String> uploadFile(File file, String path, String name) async {
-    final ref = _storage.ref().child(path).child(name);
+    final ref = _storage.ref(path).child(name);
     final snapshot = await ref.putFile(file);
     return await snapshot.ref.getDownloadURL();
+  }
+
+  Future<void> delete(String path, String name) async {
+    await _storage.ref(path).child(name).delete();
   }
 }

@@ -199,8 +199,12 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _gridTab(model.User user, List<Post> posts) {
     if (posts.isEmpty) {
-      return const Center(
-        child: Text('게시물이 없습니다.'),
+      return const Align(
+        alignment: Alignment.topCenter,
+        child: Padding(
+          padding: EdgeInsets.only(top: 190),
+          child: Text('게시물이 없습니다.'),
+        ),
       );
     }
     return GridView.builder(

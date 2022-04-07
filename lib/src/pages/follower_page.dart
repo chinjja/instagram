@@ -26,8 +26,7 @@ class _FollowPageState extends State<FollowPage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = widget.user;
-
+    final uids = {...widget.followers, ...widget.following};
     return DefaultTabController(
       initialIndex: widget.showFollows ? 0 : 1,
       length: 2,
@@ -41,39 +40,42 @@ class _FollowPageState extends State<FollowPage> {
             ],
           ),
         ),
-        body: TabBarView(children: [
-          _page(widget.followers, '팔로워가 없습니다.'),
-          _page(widget.following, '팔로잉이 없습니다.'),
-        ]),
+        body: StreamBuilder<List<User>>(
+            stream: _firestore.usersByUidList(uids.toList()),
+            builder: (context, snapshot) {
+              final users = snapshot.data ?? [];
+              return TabBarView(children: [
+                _page(widget.followers.toSet(), users, '팔로워가 없습니다.'),
+                _page(widget.following.toSet(), users, '팔로잉이 없습니다.'),
+              ]);
+            }),
       ),
     );
   }
 
-  Widget _page(List<String> uidList, String emptyMessage) {
+  Widget _page(Set<String> uidList, List<User> data, String emptyMessage) {
     if (uidList.isEmpty) {
       return Center(
         child: Text(emptyMessage),
       );
     }
-    return StreamBuilder<List<User>>(
-        stream: _firestore.usersByUidList(uidList),
-        builder: (context, snapshot) {
-          final users = snapshot.data;
-          if (users == null) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-          return ListView.builder(
-            itemCount: users.length,
-            itemBuilder: (context, index) {
-              final user = users[index];
-              return UserListTile(
-                key: ValueKey(user.uid),
-                user: user,
-              );
-            },
-          );
-        });
+
+    final users = <User>[];
+    for (final user in data) {
+      if (uidList.contains(user.uid)) {
+        users.add(user);
+      }
+    }
+
+    return ListView.builder(
+      itemCount: users.length,
+      itemBuilder: (context, index) {
+        final user = users[index];
+        return UserListTile(
+          key: ValueKey(user.uid),
+          user: user,
+        );
+      },
+    );
   }
 }
