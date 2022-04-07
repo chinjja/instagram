@@ -23,7 +23,7 @@ class StorageMethods {
     String path,
     String name, [
     Interpolation interpolation = Interpolation.average,
-    int size = 500,
+    int size = 800,
   ]) async {
     var img = decodeImage(data)!;
     if (img.width > size * 1.2 && img.width > img.height) {
