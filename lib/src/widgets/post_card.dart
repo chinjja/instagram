@@ -36,14 +36,13 @@ class _PostCardState extends State<PostCard> {
         ),
         builder: (context, snapshot) {
           final data = snapshot.data;
-          final user = data?.item1;
-          final userImage = user?.photoUrl;
-          final username = user?.username ?? '';
+          final postUser = data?.item1;
+          final postUserUrl = postUser?.photoUrl;
+          final postUsername = postUser?.username ?? '';
           final likes = data?.item2 ?? [];
 
           final isLike =
-              likes.indexWhere((element) => element.uid == widget.user.uid) !=
-                  -1;
+              likes.indexWhere((like) => like.uid == widget.user.uid) != -1;
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
@@ -56,14 +55,14 @@ class _PostCardState extends State<PostCard> {
                         padding: const EdgeInsets.all(8),
                         child: CircleAvatar(
                           radius: 18,
-                          backgroundImage: userImage == null
+                          backgroundImage: postUserUrl == null
                               ? null
-                              : NetworkImage(userImage),
+                              : NetworkImage(postUserUrl),
                         ),
                       ),
                     ),
                     Expanded(
-                      child: Text(username),
+                      child: Text(postUsername),
                     ),
                     if (post.uid == widget.user.uid)
                       PopupMenuButton(
@@ -112,7 +111,18 @@ class _PostCardState extends State<PostCard> {
                     const Expanded(child: SizedBox.shrink()),
                     IconButton(
                       onPressed: _bookmark,
-                      icon: const Icon(Icons.bookmark_outline),
+                      icon: StreamBuilder<bool>(
+                          stream: _firestore.isBookmark(
+                            postId: post.postId,
+                            uid: widget.user.uid,
+                          ),
+                          builder: (context, snapshot) {
+                            return Icon(
+                              snapshot.data ?? false
+                                  ? Icons.bookmark
+                                  : Icons.bookmark_outline,
+                            );
+                          }),
                     ),
                   ],
                 ),
@@ -131,7 +141,7 @@ class _PostCardState extends State<PostCard> {
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: RichText(
                             text: TextSpan(
-                              text: username + ' ',
+                              text: postUsername + ' ',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyText1
@@ -219,5 +229,10 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  void _bookmark() {}
+  void _bookmark() {
+    _firestore.bookmarkPost(
+      postId: widget.post.postId,
+      uid: widget.user.uid,
+    );
+  }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/pages/activity_page.dart';
+import 'package:instagram/src/pages/bookmark_page.dart';
 import 'package:instagram/src/pages/feed_page.dart';
 import 'package:instagram/src/pages/profile_page.dart';
 import 'package:instagram/src/pages/search_page.dart';
@@ -55,6 +56,9 @@ class _HomePageState extends State<HomePage> {
                     ActivityPage(
                       user: user,
                     ),
+                    BookmarkPage(
+                      user: user,
+                    ),
                     ProfilePage(
                       user: user,
                     ),
@@ -69,7 +73,8 @@ class _HomePageState extends State<HomePage> {
                   _nav(0, Icons.home, Icons.home_outlined),
                   _nav(1, Icons.search, Icons.search_outlined),
                   _nav(2, Icons.favorite, Icons.favorite_outline),
-                  _nav(3, Icons.person, Icons.person_outline),
+                  _nav(3, Icons.bookmark, Icons.bookmark_outline),
+                  _nav(4, Icons.person, Icons.person_outline),
                 ],
                 onTap: (page) {
                   setState(() {

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:instagram/src/models/activity.dart';
+import 'package:instagram/src/models/bookmark.dart';
 import 'package:instagram/src/models/comment.dart';
 import 'package:instagram/src/models/like.dart';
 import 'package:instagram/src/models/post.dart';
@@ -37,6 +38,17 @@ class FirestoreMethods {
         .map((data) => Post.fromSnapshot(data))
         .toList()
         .asStream());
+  }
+
+  Stream<List<Post>> postsByPostId(List<String> postIdList) {
+    return _firestore
+        .collection('posts')
+        .where('postId', whereIn: postIdList)
+        .snapshots()
+        .flatMap((e) => Stream.fromIterable(e.docs)
+            .map((data) => Post.fromSnapshot(data))
+            .toList()
+            .asStream());
   }
 
   Stream<List<model.User>> users({String username = ''}) {
@@ -128,6 +140,16 @@ class FirestoreMethods {
             .map((doc) => Like.fromSnapshot(doc))
             .toList()
             .asStream());
+  }
+
+  Stream<bool> isLiked({required String postId, required String uid}) {
+    return _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('likes')
+        .doc(uid)
+        .snapshots()
+        .map((event) => event.exists);
   }
 
   Future<void> likePost({required Post post, required model.User user}) async {
@@ -336,5 +358,46 @@ class FirestoreMethods {
       );
       return list;
     });
+  }
+
+  Future<void> bookmarkPost(
+      {required String postId, required String uid}) async {
+    final bookmarks = _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('bookmarks')
+        .doc(uid);
+    final bookmark = await bookmarks.get();
+    if (bookmark.exists) {
+      await bookmarks.delete();
+    } else {
+      await bookmarks.set(
+        Bookmark(
+          uid: uid,
+          postId: postId,
+        ).toJson(),
+      );
+    }
+  }
+
+  Stream<bool> isBookmark({required String postId, required String uid}) {
+    return _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('bookmarks')
+        .doc(uid)
+        .snapshots()
+        .map((event) => event.exists);
+  }
+
+  Stream<List<Bookmark>> bookmarks({required String uid}) {
+    return _firestore
+        .collectionGroup('bookmarks')
+        .where('uid', isEqualTo: uid)
+        .snapshots()
+        .flatMap((snapshot) => Stream.fromIterable(snapshot.docs)
+            .map((doc) => Bookmark.fromSnapshot(doc))
+            .toList()
+            .asStream());
   }
 }
