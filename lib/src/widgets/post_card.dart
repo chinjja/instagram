@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:instagram/src/models/like.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/pages/comment_page.dart';
@@ -27,11 +28,11 @@ class _PostCardState extends State<PostCard> {
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
-    return StreamBuilder<Tuple2<User, List<String>>>(
+    return StreamBuilder<Tuple2<User, List<Like>>>(
         stream: Rx.combineLatest2(
           _firestore.user(uid: post.uid),
           _firestore.likes(post: post),
-          (User a, List<String> b) => Tuple2(a, b),
+          (User a, List<Like> b) => Tuple2(a, b),
         ),
         builder: (context, snapshot) {
           final data = snapshot.data;
@@ -39,7 +40,10 @@ class _PostCardState extends State<PostCard> {
           final userImage = user?.photoUrl;
           final username = user?.username ?? '';
           final likes = data?.item2 ?? [];
-          final like = likes.contains(widget.user.uid);
+
+          final isLike =
+              likes.indexWhere((element) => element.uid == widget.user.uid) !=
+                  -1;
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
@@ -95,8 +99,8 @@ class _PostCardState extends State<PostCard> {
                     IconButton(
                       onPressed: _toggleLike,
                       icon: Icon(
-                        like ? Icons.favorite : Icons.favorite_outline,
-                        color: like ? Colors.red : null,
+                        isLike ? Icons.favorite : Icons.favorite_outline,
+                        color: isLike ? Colors.red : null,
                       ),
                     ),
                     IconButton(

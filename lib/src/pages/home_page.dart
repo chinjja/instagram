@@ -52,7 +52,9 @@ class _HomePageState extends State<HomePage> {
                       user: user,
                     ),
                     const SearchPage(),
-                    const ActivityPage(),
+                    ActivityPage(
+                      user: user,
+                    ),
                     ProfilePage(
                       user: user,
                     ),

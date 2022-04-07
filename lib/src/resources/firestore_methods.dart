@@ -3,7 +3,9 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:instagram/src/models/activity.dart';
 import 'package:instagram/src/models/comment.dart';
+import 'package:instagram/src/models/like.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart' as model;
 import 'package:instagram/src/resources/storage_methods.dart';
@@ -14,6 +16,14 @@ class FirestoreMethods {
   FirestoreMethods({required this.storage});
   final _firestore = FirebaseFirestore.instance;
   final StorageMethods storage;
+
+  Stream<Post> post({required String postId}) {
+    return _firestore
+        .collection('posts')
+        .doc(postId)
+        .snapshots()
+        .map((doc) => Post.fromSnapshot(doc));
+  }
 
   Stream<List<Post>> posts([List<String> uidList = const []]) {
     var query = _firestore
@@ -108,14 +118,14 @@ class FirestoreMethods {
     }
   }
 
-  Stream<List<String>> likes({required Post post}) {
+  Stream<List<Like>> likes({required Post post}) {
     return _firestore
         .collection('posts')
         .doc(post.postId)
         .collection('likes')
         .snapshots()
-        .flatMap((value) => Stream.fromIterable(value.docs)
-            .map((event) => event['uid'] as String)
+        .flatMap((snapshot) => Stream.fromIterable(snapshot.docs)
+            .map((doc) => Like.fromSnapshot(doc))
             .toList()
             .asStream());
   }
@@ -132,7 +142,15 @@ class FirestoreMethods {
         if (like.exists) {
           transaction.delete(ref);
         } else {
-          transaction.set(ref, {'uid': user.uid});
+          transaction.set(
+            ref,
+            Like(
+              uid: user.uid,
+              postId: post.postId,
+              to: post.uid,
+              datePublished: DateTime.now(),
+            ).toJson(),
+          );
         }
       });
     } catch (e) {
@@ -150,8 +168,10 @@ class FirestoreMethods {
       if (text.isNotEmpty) {
         final commentId = const Uuid().v1();
         final comment = Comment(
-          id: commentId,
+          commentId: commentId,
+          postId: post.postId,
           uid: user.uid,
+          to: post.uid,
           text: text,
           datePublished: DateTime.now(),
         );
@@ -281,5 +301,40 @@ class FirestoreMethods {
             username: user.displayName ?? user.email!,
           ).toJson());
     }
+  }
+
+  Stream<List<Activity>> activities({required String to}) {
+    final comments = _firestore
+        .collectionGroup('comments')
+        .where('to', isEqualTo: to)
+        .orderBy('datePublished', descending: true)
+        .limit(50)
+        .snapshots()
+        .flatMap((snapshot) => Stream.fromIterable(snapshot.docs)
+            .map((doc) => Comment.fromSnapshot(doc))
+            .toList()
+            .asStream());
+
+    final likes = _firestore
+        .collectionGroup('likes')
+        .where('to', isEqualTo: to)
+        .orderBy('datePublished', descending: true)
+        .limit(50)
+        .snapshots()
+        .flatMap((snapshot) => Stream.fromIterable(snapshot.docs)
+            .map((doc) => Like.fromSnapshot(doc))
+            .toList()
+            .asStream());
+
+    return Rx.combineLatest2(comments, likes, (List<Comment> a, List<Like> b) {
+      final list = <Activity>[
+        ...a.where((e) => e.uid != to),
+        ...b.where((e) => e.uid != to),
+      ];
+      list.sort(
+        (a, b) => b.datePublished.compareTo(a.datePublished),
+      );
+      return list;
+    });
   }
 }

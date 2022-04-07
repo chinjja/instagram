@@ -53,7 +53,7 @@ class _CommentPageState extends State<CommentPage> {
                       itemBuilder: (context, index) {
                         final comment = comments[index];
                         return CommentCard(
-                          key: ValueKey(comment.id),
+                          key: ValueKey(comment.commentId),
                           comment: comment,
                         );
                       },
