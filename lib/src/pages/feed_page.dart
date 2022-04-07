@@ -55,7 +55,7 @@ class _FeedPageState extends State<FeedPage> {
               _refresh();
               return Future.delayed(const Duration(seconds: 1));
             },
-            child: ListView.builder(
+            child: ListView.separated(
               itemCount: posts.length,
               itemBuilder: (context, index) {
                 final post = posts[index];
@@ -65,6 +65,7 @@ class _FeedPageState extends State<FeedPage> {
                   user: user,
                 );
               },
+              separatorBuilder: (context, index) => const Divider(),
             ),
           );
         },
