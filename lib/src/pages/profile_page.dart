@@ -27,57 +27,63 @@ class _ProfilePageState extends State<ProfilePage>
     with AutomaticKeepAliveClientMixin {
   late final _auth = context.read<AuthMethods>();
   late final _firestore = context.read<FirestoreMethods>();
+  final _gridPostsKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return StreamBuilder<Tuple3<model.User, List<String>, List<String>>>(
-        stream: Rx.combineLatest3(
-          _firestore.user(uid: widget.user.uid),
-          _firestore.followers(uid: widget.user.uid),
-          _firestore.following(uid: widget.user.uid),
-          (model.User user, List<String> a, List<String> b) =>
-              Tuple3(user, a, b),
-        ),
-        builder: (context, snapshot) {
-          final user = snapshot.data?.item1;
-          final followers = snapshot.data?.item2 ?? [];
-          final following = snapshot.data?.item3 ?? [];
-          final curUid = FirebaseAuth.instance.currentUser?.uid;
-          if (user == null || curUid == null) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-          final isOnwer = user.uid == curUid;
-          final isFollowing = followers.contains(curUid);
+      stream: Rx.combineLatest3(
+        _firestore.user(uid: widget.user.uid),
+        _firestore.followers(uid: widget.user.uid),
+        _firestore.following(uid: widget.user.uid),
+        (model.User user, List<String> a, List<String> b) => Tuple3(user, a, b),
+      ),
+      builder: (context, snapshot) {
+        final user = snapshot.data?.item1;
+        final followers = snapshot.data?.item2 ?? [];
+        final following = snapshot.data?.item3 ?? [];
+        final curUid = FirebaseAuth.instance.currentUser?.uid;
+        if (user == null || curUid == null) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+        final isOnwer = user.uid == curUid;
+        final isFollowing = followers.contains(curUid);
 
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(user.username),
-              actions: isOnwer
-                  ? [
-                      TextButton(
-                        onPressed: _signOut,
-                        child: const Text('Sign Out'),
-                      ),
-                    ]
-                  : null,
-            ),
-            body: StreamBuilder<List<Post>>(
-              stream: _firestore.posts([user.uid]),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-                final posts = snapshot.data ?? [];
-                return CustomScrollView(
-                  slivers: [
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(user.username),
+            actions: isOnwer
+                ? [
+                    TextButton(
+                      onPressed: _signOut,
+                      child: const Text('Sign Out'),
+                    ),
+                  ]
+                : null,
+          ),
+          body: StreamBuilder<List<Post>>(
+            stream: _firestore.posts([user.uid]),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+              final posts = snapshot.data ?? [];
+              return DefaultTabController(
+                length: 2,
+                child: NestedScrollView(
+                  headerSliverBuilder: (context, innerBoxIsScrolled) => [
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.only(
+                          top: 16,
+                          left: 16,
+                          right: 16,
+                        ),
                         child: Column(
                           children: [
                             Padding(
@@ -95,6 +101,13 @@ class _ProfilePageState extends State<ProfilePage>
                                   _tap(
                                     value: posts.length,
                                     name: '게시물',
+                                    onTap: () {
+                                      Scrollable.ensureVisible(
+                                        _gridPostsKey.currentContext!,
+                                        duration:
+                                            const Duration(milliseconds: 250),
+                                      );
+                                    },
                                   ),
                                   _tap(
                                     value: followers.length,
@@ -159,39 +172,79 @@ class _ProfilePageState extends State<ProfilePage>
                         ),
                       ),
                     ),
-                    SliverGrid(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final post = posts[index];
-                          return AspectRatio(
-                            key: ValueKey(post.postId),
-                            aspectRatio: 1,
-                            child: GestureDetector(
-                              onTap: () {
-                                _feed(user, posts);
-                              },
-                              child: Image.network(
-                                post.postUrl,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          );
-                        },
-                        childCount: posts.length,
-                      ),
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                        mainAxisSpacing: 1,
-                        crossAxisSpacing: 1,
-                        maxCrossAxisExtent: 150,
+                    const SliverToBoxAdapter(
+                      child: TabBar(
+                        tabs: [
+                          Tab(icon: Icon(Icons.grid_view_outlined)),
+                          Tab(icon: Icon(Icons.portrait_outlined)),
+                        ],
                       ),
                     ),
                   ],
-                );
-              },
+                  body: TabBarView(
+                    key: _gridPostsKey,
+                    children: [
+                      _gridTab(user, posts),
+                      _portraitTab(),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _gridTab(model.User user, List<Post> posts) {
+    if (posts.isEmpty) {
+      return const Center(
+        child: Text('게시물이 없습니다.'),
+      );
+    }
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        mainAxisSpacing: 1,
+        crossAxisSpacing: 1,
+        maxCrossAxisExtent: 150,
+      ),
+      itemCount: posts.length,
+      itemBuilder: (context, index) {
+        final post = posts[index];
+        return AspectRatio(
+          key: ValueKey(post.postId),
+          aspectRatio: 1,
+          child: GestureDetector(
+            onTap: () {
+              _feed(user, posts);
+            },
+            child: Image.network(
+              post.postUrl,
+              fit: BoxFit.cover,
             ),
-          );
-        });
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _portraitTab() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: const [
+          SizedBox(
+            height: 160,
+          ),
+          Icon(
+            Icons.photo_camera_outlined,
+            size: 48,
+          ),
+          Text('게시물 없음'),
+        ],
+      ),
+    );
   }
 
   void _feed(model.User user, List<Post> posts) async {
