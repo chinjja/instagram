@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -53,6 +54,7 @@ class MessageProvider {
     required String chatId,
     Timestamp? start,
     Timestamp? end,
+    required int limit,
   }) {
     assert(start != null || end != null);
     return _firestore
@@ -62,6 +64,7 @@ class MessageProvider {
         .where('datePublished', isLessThanOrEqualTo: start)
         .where('datePublished', isGreaterThan: end)
         .orderBy('datePublished', descending: true)
+        .limit(limit)
         .snapshots()
         .flatMap((snapshot) => Stream.fromIterable(snapshot.docs)
             .map((doc) => Message.fromSnapshot(doc))
@@ -69,11 +72,12 @@ class MessageProvider {
             .asStream());
   }
 
-  Stream<Message?> last({required String chatId}) {
+  Stream<Message?> last({required String chatId, Timestamp? timestamp}) {
     return _firestore
         .collection('chats')
         .doc(chatId)
         .collection('messages')
+        .where('datePublished', isGreaterThan: timestamp)
         .orderBy('datePublished', descending: true)
         .limit(1)
         .snapshots()
@@ -83,5 +87,24 @@ class MessageProvider {
             .defaultIfEmpty(null)
             .first
             .asStream());
+  }
+
+  final _subjects = <String, BehaviorSubject<List<Message>>>{};
+
+  StreamSubscription listenLasts(
+      {required String chatId, required Timestamp timestamp}) {
+    _subjects[chatId] = BehaviorSubject.seeded([]);
+    final unsubscription =
+        last(chatId: chatId, timestamp: timestamp).listen((event) async {
+      if (event != null) {
+        final list = await _subjects[chatId]!.first;
+        _subjects[chatId]!.add([event, ...list]);
+      }
+    });
+    return unsubscription;
+  }
+
+  Stream<List<Message>> lasts({required String chatId}) {
+    return _subjects[chatId]!;
   }
 }
