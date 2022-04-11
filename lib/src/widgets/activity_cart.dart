@@ -6,6 +6,8 @@ import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/pages/post_list_page.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
+import 'package:instagram/src/utils/utils.dart';
+import 'package:instagram/src/widgets/get_user.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -23,13 +25,12 @@ class ActivityCard extends StatefulWidget {
 
 class _ActivityCardState extends State<ActivityCard> {
   late final _firestore = context.read<FirestoreMethods>();
-  late final activity = widget.activity;
   Post? _post;
 
   @override
   void initState() {
     super.initState();
-    _firestore.post(postId: activity.postId).first.then(
+    _firestore.posts.at(postId: widget.activity.postId).first.then(
           (post) => setState(() {
             _post = post;
           }),
@@ -38,10 +39,10 @@ class _ActivityCardState extends State<ActivityCard> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User>(
-      stream: _firestore.user(uid: activity.uid),
-      builder: (context, snapshot) {
-        final user = snapshot.data;
+    final activity = widget.activity;
+    return GetUser(
+      uid: activity.uid,
+      builder: (context, user) {
         return ListTile(
           leading: _circleNetwork(user?.photoUrl),
           title: _makeTitle(user, activity),
@@ -70,7 +71,7 @@ class _ActivityCardState extends State<ActivityCard> {
 
   Widget _circleNetwork(String? url) {
     return CircleAvatar(
-      backgroundImage: url == null ? null : NetworkImage(url),
+      backgroundImage: networkImage(url),
       radius: 20,
     );
   }
@@ -115,7 +116,9 @@ class _ActivityCardState extends State<ActivityCard> {
             ),
           ),
           TextSpan(
-            text: DateFormat.Md().add_jm().format(activity.datePublished),
+            text: DateFormat.Md()
+                .add_jm()
+                .format(activity.datePublished.toDate()),
             style: const TextStyle(
               color: Colors.grey,
               fontWeight: FontWeight.normal,

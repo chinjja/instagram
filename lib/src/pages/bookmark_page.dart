@@ -9,32 +9,31 @@ import 'package:provider/provider.dart';
 class BookmarkPage extends StatefulWidget {
   const BookmarkPage({
     Key? key,
-    required this.user,
+    required this.currentUser,
   }) : super(key: key);
-  final User user;
+  final User currentUser;
 
   @override
   State<BookmarkPage> createState() => _BookmarkPageState();
 }
 
-class _BookmarkPageState extends State<BookmarkPage>
-    with AutomaticKeepAliveClientMixin {
+class _BookmarkPageState extends State<BookmarkPage> {
   late final _firestore = context.read<FirestoreMethods>();
+
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-
+    final currentUser = widget.currentUser;
     return Scaffold(
       appBar: AppBar(title: const Text('저장됨')),
       body: StreamBuilder<List<Bookmark>>(
-        stream: _firestore.bookmarks(uid: widget.user.uid),
+        stream: _firestore.bookmarks.all(uid: currentUser.uid),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          final bookmarks = snapshot.data;
+          if (bookmarks == null) {
             return const Center(
               child: CircularProgressIndicator(),
             );
           }
-          final bookmarks = snapshot.data ?? [];
           if (bookmarks.isEmpty) {
             return const Center(
               child: Text('저장된 포스트가 없습니다.'),
@@ -54,38 +53,33 @@ class _BookmarkPageState extends State<BookmarkPage>
                   key: ValueKey(bookmark.postId),
                   aspectRatio: 1,
                   child: StreamBuilder<Post>(
-                      stream: _firestore.post(postId: bookmark.postId),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        final post = snapshot.data;
-                        if (post == null) {
-                          return const Center(
-                            child: Text('게시물이 삭제되었습니다.'),
-                          );
-                        }
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => PostListPage(
-                                  user: widget.user,
-                                  posts: [post],
-                                ),
-                              ),
-                            );
-                          },
-                          child: Image.network(
-                            post.postUrl,
-                            fit: BoxFit.cover,
-                          ),
+                    stream: _firestore.posts.at(postId: bookmark.postId),
+                    builder: (context, snapshot) {
+                      final post = snapshot.data;
+                      if (post == null) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
                         );
-                      }),
+                      }
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PostListPage(
+                                user: currentUser,
+                                posts: [post],
+                              ),
+                            ),
+                          );
+                        },
+                        child: Image.network(
+                          post.postUrl,
+                          fit: BoxFit.cover,
+                        ),
+                      );
+                    },
+                  ),
                 );
               },
             ),
@@ -94,7 +88,4 @@ class _BookmarkPageState extends State<BookmarkPage>
       ),
     );
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }

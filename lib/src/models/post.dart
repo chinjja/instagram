@@ -4,7 +4,7 @@ class Post {
   final String description;
   final String uid;
   final String postId;
-  final DateTime datePublished;
+  final Timestamp datePublished;
   final String postUrl;
   final double aspectRatio;
 
@@ -21,7 +21,7 @@ class Post {
         'uid': uid,
         'description': description,
         'postId': postId,
-        'datePublished': datePublished.toIso8601String(),
+        'datePublished': datePublished,
         'postUrl': postUrl,
         'aspectRatio': aspectRatio,
       };
@@ -32,7 +32,7 @@ class Post {
       uid: data['uid'],
       description: data['description'],
       postId: data['postId'],
-      datePublished: DateTime.parse(data['datePublished']),
+      datePublished: data['datePublished'],
       postUrl: data['postUrl'],
       aspectRatio: data['aspectRatio'],
     );

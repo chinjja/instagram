@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Activity {
   final String postId;
   final String uid;
   final String to;
-  final DateTime datePublished;
+  final Timestamp datePublished;
 
   const Activity({
     required this.postId,

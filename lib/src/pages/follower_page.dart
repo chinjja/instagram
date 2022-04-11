@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/user.dart';
-import 'package:instagram/src/resources/firestore_methods.dart';
+import 'package:instagram/src/widgets/get_user_list.dart';
 import 'package:instagram/src/widgets/user_list_tile.dart';
-import 'package:provider/provider.dart';
 
 class FollowPage extends StatefulWidget {
   const FollowPage({
@@ -22,8 +21,6 @@ class FollowPage extends StatefulWidget {
 }
 
 class _FollowPageState extends State<FollowPage> {
-  late final _firestore = context.read<FirestoreMethods>();
-
   @override
   Widget build(BuildContext context) {
     final uids = {...widget.followers, ...widget.following};
@@ -40,13 +37,12 @@ class _FollowPageState extends State<FollowPage> {
             ],
           ),
         ),
-        body: StreamBuilder<List<User>>(
-            stream: _firestore.usersByUidList(uids.toList()),
-            builder: (context, snapshot) {
-              final users = snapshot.data ?? [];
+        body: GetUserList(
+            uids: uids.toList(),
+            builder: (context, users) {
               return TabBarView(children: [
-                _page(widget.followers.toSet(), users, '팔로워가 없습니다.'),
-                _page(widget.following.toSet(), users, '팔로잉이 없습니다.'),
+                _page(widget.followers.toSet(), users ?? [], '팔로워가 없습니다.'),
+                _page(widget.following.toSet(), users ?? [], '팔로잉이 없습니다.'),
               ]);
             }),
       ),
@@ -68,6 +64,7 @@ class _FollowPageState extends State<FollowPage> {
     }
 
     return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 4),
       itemCount: users.length,
       itemBuilder: (context, index) {
         final user = users[index];

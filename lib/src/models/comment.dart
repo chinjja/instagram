@@ -9,7 +9,7 @@ class Comment extends Activity {
     required String uid,
     required String postId,
     required String to,
-    required DateTime datePublished,
+    required Timestamp datePublished,
     required this.commentId,
     required this.text,
   }) : super(
@@ -25,7 +25,7 @@ class Comment extends Activity {
         'uid': uid,
         'to': to,
         'text': text,
-        'datePublished': datePublished.toIso8601String(),
+        'datePublished': datePublished,
       };
 
   static Comment fromSnapshot(DocumentSnapshot snapshot) {
@@ -36,7 +36,7 @@ class Comment extends Activity {
       uid: data['uid'],
       to: data['to'],
       text: data['text'],
-      datePublished: DateTime.parse(data['datePublished']),
+      datePublished: data['datePublished'],
     );
   }
 }

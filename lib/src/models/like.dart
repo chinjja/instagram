@@ -6,7 +6,7 @@ class Like extends Activity {
     required String uid,
     required String postId,
     required String to,
-    required DateTime datePublished,
+    required Timestamp datePublished,
   }) : super(
           uid: uid,
           postId: postId,
@@ -18,7 +18,7 @@ class Like extends Activity {
         'uid': uid,
         'postId': postId,
         'to': to,
-        'datePublished': datePublished.toIso8601String(),
+        'datePublished': datePublished,
       };
 
   static Like fromSnapshot(DocumentSnapshot snapshot) {
@@ -27,7 +27,7 @@ class Like extends Activity {
       uid: data['uid'],
       postId: data['postId'],
       to: data['to'],
-      datePublished: DateTime.parse(data['datePublished']),
+      datePublished: data['datePublished'],
     );
   }
 }

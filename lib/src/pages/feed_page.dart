@@ -10,22 +10,21 @@ import 'package:rxdart/rxdart.dart';
 class FeedPage extends StatefulWidget {
   const FeedPage({
     Key? key,
-    required this.user,
+    required this.currentUser,
+    required this.onShowChat,
   }) : super(key: key);
-  final User user;
+  final User currentUser;
+  final void Function() onShowChat;
   @override
   State<FeedPage> createState() => _FeedPageState();
 }
 
-class _FeedPageState extends State<FeedPage>
-    with AutomaticKeepAliveClientMixin {
+class _FeedPageState extends State<FeedPage> {
   late final _firestore = context.read<FirestoreMethods>();
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-    final user = widget.user;
-
+    final currentUser = widget.currentUser;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Instagram'),
@@ -34,12 +33,15 @@ class _FeedPageState extends State<FeedPage>
             onPressed: _addPost,
             icon: const Icon(Icons.add_outlined),
           ),
+          IconButton(
+            onPressed: widget.onShowChat,
+            icon: const Icon(Icons.send),
+          ),
         ],
       ),
       body: StreamBuilder<List<Post>>(
-        stream: _firestore
-            .following(uid: user.uid)
-            .flatMap((e) => _firestore.posts([user.uid, ...e])),
+        stream: _firestore.posts
+            .all(uids: [currentUser.uid, ...currentUser.following]),
         builder: (context, snapshot) {
           final posts = snapshot.data;
           if (posts == null) {
@@ -52,23 +54,18 @@ class _FeedPageState extends State<FeedPage>
               child: Text('게시물이 없습니다. 팔로잉을 하세요.'),
             );
           }
-          return RefreshIndicator(
-            onRefresh: () async {
-              _refresh();
-              return Future.delayed(const Duration(seconds: 1));
+          return ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            itemCount: posts.length,
+            itemBuilder: (context, index) {
+              final post = posts[index];
+              return PostCard(
+                key: ValueKey(post.postId),
+                post: post,
+                user: currentUser,
+              );
             },
-            child: ListView.separated(
-              itemCount: posts.length,
-              itemBuilder: (context, index) {
-                final post = posts[index];
-                return PostCard(
-                  key: ValueKey(post.postId),
-                  post: post,
-                  user: user,
-                );
-              },
-              separatorBuilder: (context, index) => const Divider(),
-            ),
+            separatorBuilder: (context, index) => const Divider(),
           );
         },
       ),
@@ -79,15 +76,8 @@ class _FeedPageState extends State<FeedPage>
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddPostPage(user: widget.user),
+        builder: (context) => AddPostPage(user: widget.currentUser),
       ),
     );
   }
-
-  void _refresh() {
-    setState(() {});
-  }
-
-  @override
-  bool get wantKeepAlive => true;
 }

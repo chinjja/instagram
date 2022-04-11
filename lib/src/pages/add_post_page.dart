@@ -101,9 +101,7 @@ class _AddPostPageState extends State<AddPostPage> {
               children: [
                 CircleAvatar(
                   radius: 16,
-                  backgroundImage: widget.user.photoUrl == null
-                      ? null
-                      : NetworkImage(widget.user.photoUrl!),
+                  backgroundImage: networkImage(widget.user.photoUrl),
                 ),
                 const SizedBox(width: 12),
                 Expanded(child: Text(widget.user.username)),
@@ -124,7 +122,7 @@ class _AddPostPageState extends State<AddPostPage> {
     setState(() {
       _uploading = true;
     });
-    await _firestore.uploadPost(
+    await _firestore.posts.create(
       description: _description.text,
       file: _image!,
       user: widget.user,

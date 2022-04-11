@@ -32,7 +32,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     ImageProvider? ip;
     if (_image == null) {
       final url = widget.user.photoUrl;
-      ip = url == null ? null : NetworkImage(url);
+      ip = networkImage(url);
     } else {
       ip = MemoryImage(_image!);
     }
@@ -127,7 +127,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _uploading = true;
     });
     try {
-      await _firestore.updateUser(
+      await _firestore.users.update(
         widget.user,
         photo: _image,
         username: _username.text,

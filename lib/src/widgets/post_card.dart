@@ -6,6 +6,7 @@ import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/pages/comment_page.dart';
 import 'package:instagram/src/pages/profile_page.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
+import 'package:instagram/src/utils/utils.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
@@ -29,181 +30,183 @@ class _PostCardState extends State<PostCard> {
   Widget build(BuildContext context) {
     final post = widget.post;
     return StreamBuilder<Tuple2<User, List<Like>>>(
-        stream: Rx.combineLatest2(
-          _firestore.user(uid: post.uid),
-          _firestore.likes(post: post),
-          (User a, List<Like> b) => Tuple2(a, b),
-        ),
-        builder: (context, snapshot) {
-          final data = snapshot.data;
-          final postUser = data?.item1;
-          final postUserUrl = postUser?.photoUrl;
-          final postUsername = postUser?.username ?? '';
-          final likes = data?.item2 ?? [];
+      stream: Rx.combineLatest2(
+        _firestore.users.at(uid: post.uid),
+        _firestore.likes.all(postId: post.postId),
+        (User a, List<Like> b) => Tuple2(a, b),
+      ),
+      builder: (context, snapshot) {
+        final data = snapshot.data;
+        final postUser = data?.item1;
+        final postUserUrl = postUser?.photoUrl;
+        final postUsername = postUser?.username ?? '';
+        final likes = data?.item2 ?? [];
 
-          final isLike =
-              likes.indexWhere((like) => like.uid == widget.user.uid) != -1;
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Column(
+        final isLike =
+            likes.indexWhere((like) => like.uid == widget.user.uid) != -1;
+
+        return Column(
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: _showProfile,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: CircleAvatar(
-                          radius: 18,
-                          backgroundImage: postUserUrl == null
-                              ? null
-                              : NetworkImage(postUserUrl),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(postUsername),
-                    ),
-                    if (post.uid == widget.user.uid)
-                      PopupMenuButton(
-                        itemBuilder: (context) {
-                          return [
-                            PopupMenuItem(
-                              child: const Text('Delete'),
-                              onTap: () {
-                                _firestore.deletePost(post);
-                              },
-                            ),
-                          ];
-                        },
-                      ),
-                  ],
-                ),
-                Container(
-                  width: double.infinity,
-                  color: Colors.black,
-                  constraints: const BoxConstraints(
-                    minHeight: 250,
-                    maxHeight: 500,
-                  ),
-                  child: AspectRatio(
-                    aspectRatio: post.aspectRatio,
-                    child: Image.network(
-                      post.postUrl,
-                      fit: BoxFit.fitHeight,
+                GestureDetector(
+                  onTap: () {
+                    if (postUser != null) {
+                      _showProfile(postUser);
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundImage: networkImage(postUserUrl),
                     ),
                   ),
                 ),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: _toggleLike,
-                      icon: Icon(
-                        isLike ? Icons.favorite : Icons.favorite_outline,
-                        color: isLike ? Colors.red : null,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        _comment(autoFocus: true);
-                      },
-                      icon: const Icon(Icons.comment_outlined),
-                    ),
-                    const Expanded(child: SizedBox.shrink()),
-                    IconButton(
-                      onPressed: _bookmark,
-                      icon: StreamBuilder<bool>(
-                          stream: _firestore.isBookmark(
-                            postId: post.postId,
-                            uid: widget.user.uid,
-                          ),
-                          builder: (context, snapshot) {
-                            return Icon(
-                              snapshot.data ?? false
-                                  ? Icons.bookmark
-                                  : Icons.bookmark_outline,
-                            );
-                          }),
-                    ),
-                  ],
+                Expanded(
+                  child: Text(postUsername),
                 ),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Text('${likes.length} likes'),
-                      ),
-                      if (post.description.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: RichText(
-                            text: TextSpan(
-                              text: postUsername + ' ',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyText1
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                              children: [
-                                TextSpan(
-                                    text: post.description,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.normal)),
-                              ],
-                            ),
-                          ),
+                Visibility(
+                  visible: post.uid == widget.user.uid,
+                  child: PopupMenuButton(
+                    itemBuilder: (context) {
+                      return [
+                        PopupMenuItem(
+                          child: const Text('Delete'),
+                          onTap: () {
+                            _firestore.posts.delete(postId: post.postId);
+                          },
                         ),
-                      InkWell(
-                        onTap: () {
-                          _comment(autoFocus: false);
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: FutureBuilder<
-                                  QuerySnapshot<Map<String, dynamic>>>(
-                              future: FirebaseFirestore.instance
-                                  .collection('posts')
-                                  .doc(post.postId)
-                                  .collection('comments')
-                                  .get(),
-                              builder: (context, snapshot) {
-                                final len = snapshot.data?.docs.length ?? 0;
-                                return Text(
-                                  'View all $len comments',
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                  ),
-                                );
-                              }),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Text(
-                          DateFormat.yMMMd()
-                              .add_jm()
-                              .format(post.datePublished),
-                          style: const TextStyle(
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ],
+                      ];
+                    },
                   ),
                 ),
               ],
             ),
-          );
-        });
+            Container(
+              width: double.infinity,
+              color: Colors.black,
+              constraints: const BoxConstraints(
+                minHeight: 250,
+                maxHeight: 500,
+              ),
+              child: AspectRatio(
+                aspectRatio: post.aspectRatio,
+                child: Image.network(
+                  post.postUrl,
+                  fit: BoxFit.fitHeight,
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: _toggleLike,
+                  icon: Icon(
+                    isLike ? Icons.favorite : Icons.favorite_outline,
+                    color: isLike ? Colors.red : null,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    _comment(autoFocus: true);
+                  },
+                  icon: const Icon(Icons.comment_outlined),
+                ),
+                const Expanded(child: SizedBox.shrink()),
+                IconButton(
+                  onPressed: _bookmark,
+                  icon: StreamBuilder<bool>(
+                      stream: _firestore.bookmarks.has(
+                        postId: post.postId,
+                        uid: widget.user.uid,
+                      ),
+                      builder: (context, snapshot) {
+                        return Icon(
+                          snapshot.data ?? false
+                              ? Icons.bookmark
+                              : Icons.bookmark_outline,
+                        );
+                      }),
+                ),
+              ],
+            ),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text('${likes.length} likes'),
+                  ),
+                  if (post.description.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: RichText(
+                        text: TextSpan(
+                          text: postUsername + ' ',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyText1
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                          children: [
+                            TextSpan(
+                                text: post.description,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.normal)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  InkWell(
+                    onTap: () {
+                      _comment(autoFocus: false);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                          future: FirebaseFirestore.instance
+                              .collection('posts')
+                              .doc(post.postId)
+                              .collection('comments')
+                              .get(),
+                          builder: (context, snapshot) {
+                            final len = snapshot.data?.docs.length ?? 0;
+                            return Text(
+                              'View all $len comments',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                              ),
+                            );
+                          }),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      DateFormat.yMMMd()
+                          .add_jm()
+                          .format(post.datePublished.toDate()),
+                      style: const TextStyle(
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _toggleLike() {
-    _firestore.likePost(
+    _firestore.likes.toggle(
       post: widget.post,
-      user: widget.user,
+      uid: widget.user.uid,
     );
   }
 
@@ -220,8 +223,7 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  void _showProfile() async {
-    final user = await _firestore.user(uid: widget.post.uid).first;
+  void _showProfile(User user) async {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -231,7 +233,7 @@ class _PostCardState extends State<PostCard> {
   }
 
   void _bookmark() {
-    _firestore.bookmarkPost(
+    _firestore.bookmarks.toggle(
       postId: widget.post.postId,
       uid: widget.user.uid,
     );

@@ -9,39 +9,39 @@ import 'package:provider/provider.dart';
 class ActivityPage extends StatefulWidget {
   const ActivityPage({
     Key? key,
-    required this.user,
+    required this.currentUser,
   }) : super(key: key);
-  final User user;
+  final User currentUser;
 
   @override
   State<ActivityPage> createState() => _ActivityPageState();
 }
 
-class _ActivityPageState extends State<ActivityPage>
-    with AutomaticKeepAliveClientMixin {
+class _ActivityPageState extends State<ActivityPage> {
   late final _firestore = context.read<FirestoreMethods>();
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
+    final currentUser = widget.currentUser;
     return Scaffold(
       appBar: AppBar(title: const Text('활동')),
       body: SafeArea(
         child: StreamBuilder<List<Activity>>(
-            stream: _firestore.activities(to: widget.user.uid),
+            stream: _firestore.activities.all(uid: currentUser.uid),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+              final activities = snapshot.data;
+              if (activities == null) {
                 return const Center(
                   child: CircularProgressIndicator(),
                 );
               }
-              final activities = snapshot.data ?? [];
               if (activities.isEmpty) {
                 return const Center(
                   child: Text('활동이 없습니다.'),
                 );
               }
               return ListView.separated(
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 itemCount: activities.length,
                 itemBuilder: (context, index) {
                   final activity = activities[index];
@@ -60,7 +60,4 @@ class _ActivityPageState extends State<ActivityPage>
       ),
     );
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }
