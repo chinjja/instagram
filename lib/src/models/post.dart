@@ -4,9 +4,10 @@ class Post {
   final String description;
   final String uid;
   final String postId;
-  final DateTime datePublished;
+  final Timestamp? datePublished;
   final String postUrl;
-  final List<String> likes;
+  final double aspectRatio;
+  final List<String> bookmarks;
 
   const Post({
     required this.description,
@@ -14,16 +15,18 @@ class Post {
     required this.postId,
     required this.datePublished,
     required this.postUrl,
-    required this.likes,
+    required this.aspectRatio,
+    required this.bookmarks,
   });
 
   Map<String, dynamic> toJson() => {
         'uid': uid,
         'description': description,
         'postId': postId,
-        'datePublished': datePublished.toIso8601String(),
+        'datePublished': datePublished,
         'postUrl': postUrl,
-        'likes': likes,
+        'aspectRatio': aspectRatio,
+        'bookmarks': bookmarks,
       };
 
   static Post fromSnapshot(DocumentSnapshot snapshot) {
@@ -32,9 +35,10 @@ class Post {
       uid: data['uid'],
       description: data['description'],
       postId: data['postId'],
-      datePublished: DateTime.parse(data['datePublished']),
+      datePublished: data['datePublished'],
       postUrl: data['postUrl'],
-      likes: List.castFrom(data['likes']),
+      aspectRatio: data['aspectRatio'],
+      bookmarks: List.castFrom(data['bookmarks'] ?? []),
     );
   }
 }

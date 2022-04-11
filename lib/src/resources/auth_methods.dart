@@ -2,23 +2,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:instagram/src/models/user.dart' as model;
 import 'package:instagram/src/resources/firestore_methods.dart';
-import 'package:instagram/src/resources/storage_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
 
 class AuthMethods {
   AuthMethods({
-    required this.storage,
     required this.firestore,
   });
   final _auth = FirebaseAuth.instance;
-  final StorageMethods storage;
   final FirestoreMethods firestore;
 
-  Stream<model.User?> get currentUser => firestore.user(uid: currentUid);
-
-  String get currentUid => _auth.currentUser!.uid;
+  String? get currentUid => _auth.currentUser?.uid;
 
   Future<UserCredential?> signInWithGoogle(BuildContext context) async {
     UserCredential credential;
@@ -40,7 +34,7 @@ class AuthMethods {
       if (user == null) {
         return null;
       }
-      await firestore.initUser(credential);
+      await firestore.users.create(credential);
       return credential;
     } catch (e) {
       showSnackbar(context, e.toString());
@@ -48,7 +42,10 @@ class AuthMethods {
     }
   }
 
-  Future<void> signOut() async {
-    return _auth.signOut();
+  Future<void> signOut([BuildContext? context]) async {
+    await _auth.signOut();
+    if (context != null) {
+      Navigator.popUntil(context, (route) => route.settings.name == '/');
+    }
   }
 }

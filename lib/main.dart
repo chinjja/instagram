@@ -4,9 +4,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:instagram/src/pages/home_page.dart';
 import 'package:instagram/src/pages/welcome.dart';
+import 'package:instagram/src/providers/activity_provider.dart';
+import 'package:instagram/src/providers/chat_provider.dart';
+import 'package:instagram/src/providers/comment_provider.dart';
+import 'package:instagram/src/providers/like_provider.dart';
+import 'package:instagram/src/providers/message_provider.dart';
+import 'package:instagram/src/providers/post_provider.dart';
+import 'package:instagram/src/providers/user_provider.dart';
 import 'package:instagram/src/resources/auth_methods.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/resources/storage_methods.dart';
+import 'package:instagram/src/widgets/current_user.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
@@ -22,20 +30,8 @@ void main() async {
         authDomain: 'instagram-21e39.firebaseapp.com');
   }
   await Firebase.initializeApp(options: options);
-  runApp(const MyApp());
-}
-
-final _storage = StorageMethods();
-final _firestore = FirestoreMethods(storage: _storage);
-final _auth = AuthMethods(storage: _storage, firestore: _firestore);
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
+  runApp(
+    MultiProvider(
       providers: [
         Provider.value(value: _storage),
         Provider.value(value: _firestore),
@@ -44,10 +40,46 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Instagram Demo',
         theme: ThemeData.dark(),
-        home: FirebaseAuth.instance.currentUser == null
-            ? const WelcomePage()
-            : const HomePage(),
+        home: const MyApp(),
       ),
+    ),
+  );
+}
+
+final _storage = StorageMethods();
+final _commentProvider = CommentProvider(storage: _storage);
+final _messages = MessageProvider(storage: _storage);
+final _likeProvider = LikeProvider(storage: _storage);
+final _activityProvider = ActivityProvider(storage: _storage);
+final _firestore = FirestoreMethods(
+  users: UserProvider(storage: _storage),
+  posts: PostProvider(
+    storage: _storage,
+    commentProvider: _commentProvider,
+    likeProvider: _likeProvider,
+    activityProvider: _activityProvider,
+  ),
+  likes: LikeProvider(storage: _storage),
+  comments: _commentProvider,
+  activities: ActivityProvider(storage: _storage),
+  chats: ChatProvider(storage: _storage, messages: _messages),
+  messages: _messages,
+);
+final _auth = AuthMethods(firestore: _firestore);
+
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        final user = snapshot.data;
+        if (user == null) {
+          return const WelcomePage();
+        }
+        return const HomePage();
+      },
     );
   }
 }

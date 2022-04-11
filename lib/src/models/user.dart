@@ -6,8 +6,8 @@ class User {
   final String username;
   final String? state;
   final String? photoUrl;
-  final List<String> followers;
   final List<String> following;
+  final List<String> followers;
 
   const User({
     required this.email,
@@ -15,9 +15,17 @@ class User {
     this.photoUrl,
     required this.username,
     this.state,
-    required this.followers,
     required this.following,
+    required this.followers,
   });
+
+  bool isFollowers({required String uid}) {
+    return followers.contains(uid);
+  }
+
+  bool isFollowing({required String uid}) {
+    return following.contains(uid);
+  }
 
   Map<String, dynamic> toJson() => {
         'username': username,
@@ -25,8 +33,8 @@ class User {
         'uid': uid,
         'email': email,
         'photoUrl': photoUrl,
-        'followers': followers,
         'following': following,
+        'followers': followers,
       };
 
   static User fromSnapshot(DocumentSnapshot snapshot) {
@@ -37,8 +45,8 @@ class User {
       uid: data['uid'],
       email: data['email'],
       photoUrl: data['photoUrl'],
-      followers: List.castFrom(data['followers']),
-      following: List.castFrom(data['following']),
+      following: List.castFrom(data['following'] ?? []),
+      followers: List.castFrom(data['followers'] ?? []),
     );
   }
 }

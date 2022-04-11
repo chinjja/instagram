@@ -31,17 +31,17 @@ class _SearchPageState extends State<SearchPage> {
         ),
       ),
       body: StreamBuilder<List<User>>(
-        stream: _firestore.users(username: _searchController.text),
+        stream: _firestore.users.search(username: _searchController.text),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          final users = snapshot.data;
+          if (users == null) {
             return const Center(
               child: CircularProgressIndicator(),
             );
           }
-
-          final users = snapshot.data ?? [];
           return ListView.builder(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.symmetric(vertical: 4),
             itemCount: users.length,
             itemBuilder: (context, index) {
               final user = users[index];

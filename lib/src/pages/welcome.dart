@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:instagram/src/pages/home_page.dart';
 import 'package:instagram/src/resources/auth_methods.dart';
+import 'package:instagram/src/utils/utils.dart';
 import 'package:provider/provider.dart';
 
 class WelcomePage extends StatefulWidget {
@@ -46,17 +46,10 @@ class _WelcomePageState extends State<WelcomePage> {
   }
 
   void _oauth() async {
-    final user = await _auth.signInWithGoogle(context);
-    if (user != null) {
-      _goHomePage();
+    try {
+      await _auth.signInWithGoogle(context);
+    } catch (e) {
+      showSnackbar(context, e.toString());
     }
-  }
-
-  void _goHomePage() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const HomePage()),
-      (route) => false,
-    );
   }
 }
