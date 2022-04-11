@@ -38,12 +38,19 @@ class PostProvider {
         .doOnError((_, e) => log(e.toString()));
   }
 
-  Stream<List<Post>> all({required List<String> uids}) {
+  Stream<List<Post>> all({
+    required List<String> uids,
+    Timestamp? start,
+    Timestamp? end,
+  }) {
+    assert(start != null || end != null);
     return FirestoreMethods.buffer(
         uids,
         (List<String> uid) => _firestore
             .collection('posts')
             .where('uid', whereIn: uid)
+            .where('datePublished', isLessThanOrEqualTo: start)
+            .where('datePublished', isGreaterThan: end)
             .orderBy('datePublished', descending: true)
             .snapshots()
             .flatMap((e) => Stream.fromIterable(e.docs)
@@ -95,6 +102,7 @@ class PostProvider {
   }
 
   Future<void> delete({required String postId}) async {
+    log('delete post: $postId');
     final batch = _firestore.batch();
     batch.delete(_firestore.collection('posts').doc(postId));
     likeProvider.delete(batch, postId);
@@ -104,12 +112,14 @@ class PostProvider {
   }
 
   Future<void> bookmark({required String postId, required String uid}) async {
+    log('bookmark: $uid');
     await _firestore.collection('posts').doc(postId).update({
       'bookmarks': FieldValue.arrayUnion([uid])
     });
   }
 
   Future<void> unbookmark({required String postId, required String uid}) async {
+    log('unbookmark: $uid');
     await _firestore.collection('posts').doc(postId).update({
       'bookmarks': FieldValue.arrayRemove([uid])
     });

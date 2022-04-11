@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
@@ -31,7 +32,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final timestamp = Timestamp.now();
     final user1 = widget.user;
+    final postStream = Rx.combineLatest2(
+      _firestore.posts.all(uids: [user1.uid], end: timestamp),
+      _firestore.posts.all(uids: [user1.uid], start: timestamp),
+      (List<Post> a, List<Post> b) => [...a, ...b],
+    );
     return GetUser(
       uid: user1.uid,
       builder: (context, snapshot) {
@@ -45,7 +52,9 @@ class _ProfilePageState extends State<ProfilePage> {
             final followers = user.followers;
             final following = user.following;
             final isOnwer = user.uid == currentUser.uid;
-            final isFollowing = followers.contains(currentUser.uid);
+            final isFollower = followers.contains(currentUser.uid);
+            final isFollowing = following.contains(currentUser.uid);
+
             return Scaffold(
               appBar: AppBar(
                 title: Text(user.username),
@@ -59,7 +68,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     : null,
               ),
               body: StreamBuilder<List<Post>>(
-                stream: _firestore.posts.all(uids: [user.uid]),
+                stream: postStream,
                 builder: (context, snapshot) {
                   final posts = snapshot.data;
                   if (posts == null) {
@@ -153,14 +162,17 @@ class _ProfilePageState extends State<ProfilePage> {
                                         children: [
                                           Flexible(
                                             child: _button(
-                                              text:
-                                                  isFollowing ? '언팔로잉' : '팔로잉',
-                                              color: isFollowing
+                                              text: isFollower
+                                                  ? '팔로잉'
+                                                  : isFollowing
+                                                      ? '맞-팔로우'
+                                                      : '팔로우',
+                                              color: isFollower
                                                   ? null
                                                   : Colors.blue,
                                               onTap: () {
                                                 _toggleFollows(
-                                                  isFollow: isFollowing,
+                                                  isFollow: isFollower,
                                                   uid: currentUser.uid,
                                                   to: user.uid,
                                                 );

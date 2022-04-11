@@ -60,9 +60,9 @@ class UserProvider {
     required String to,
     required bool follow,
   }) async {
-    log('follow user: $uid -> $to');
     final batch = _firestore.batch();
     if (follow) {
+      log('unfollow user: $uid -> $to');
       batch.update(_firestore.collection('users').doc(uid), {
         'following': FieldValue.arrayUnion([to]),
       });
@@ -70,6 +70,7 @@ class UserProvider {
         'followers': FieldValue.arrayUnion([uid]),
       });
     } else {
+      log('follow user: $uid -> $to');
       batch.update(_firestore.collection('users').doc(uid), {
         'following': FieldValue.arrayRemove([to]),
       });

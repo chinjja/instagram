@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
@@ -24,7 +25,9 @@ class _FeedPageState extends State<FeedPage> {
 
   @override
   Widget build(BuildContext context) {
+    final timestamp = Timestamp.now();
     final currentUser = widget.currentUser;
+    final members = [currentUser.uid, ...currentUser.following];
     return Scaffold(
       appBar: AppBar(
         title: const Text('Instagram'),
@@ -40,8 +43,11 @@ class _FeedPageState extends State<FeedPage> {
         ],
       ),
       body: StreamBuilder<List<Post>>(
-        stream: _firestore.posts
-            .all(uids: [currentUser.uid, ...currentUser.following]),
+        stream: Rx.combineLatest2(
+          _firestore.posts.all(uids: members, end: timestamp),
+          _firestore.posts.all(uids: members, start: timestamp),
+          (List<Post> a, List<Post> b) => [...a, ...b],
+        ),
         builder: (context, snapshot) {
           final posts = snapshot.data;
           if (posts == null) {

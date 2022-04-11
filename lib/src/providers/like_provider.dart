@@ -12,11 +12,13 @@ class LikeProvider {
   final StorageMethods storage;
 
   void create(WriteBatch batch, String id) {
+    log('create like: $id');
     batch.set(_firestore.collection('likes').doc(id),
         Likes(id: id, likes: {}).toJson());
   }
 
   void delete(WriteBatch batch, String id) {
+    log('delete like: $id');
     batch.delete(_firestore.collection('likes').doc(id));
   }
 

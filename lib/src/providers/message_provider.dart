@@ -54,6 +54,7 @@ class MessageProvider {
     Timestamp? start,
     Timestamp? end,
   }) {
+    assert(start != null || end != null);
     return _firestore
         .collection('chats')
         .doc(chatId)

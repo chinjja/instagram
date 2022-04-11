@@ -4,6 +4,7 @@ import 'package:instagram/src/pages/message_page.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
 import 'package:instagram/src/widgets/get_user.dart';
+import 'package:instagram/src/widgets/get_user_list.dart';
 import 'package:instagram/src/widgets/user_list_tile.dart';
 import 'package:provider/provider.dart';
 
@@ -27,7 +28,11 @@ class _NewMessagePageState extends State<NewMessagePage> {
   @override
   Widget build(BuildContext context) {
     final currentUser = widget.currentUser;
-    final following = currentUser.following;
+    final bi = currentUser.following.toSet();
+    bi.retainAll(currentUser.followers);
+    bi.remove(currentUser.uid);
+    final friends = bi.toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('새 메시지'),
@@ -39,47 +44,51 @@ class _NewMessagePageState extends State<NewMessagePage> {
         ],
       ),
       body: SafeArea(
-        child: ListView.builder(
-          itemExtent: 60,
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          itemCount: following.length,
-          itemBuilder: (context, index) {
-            final uid = following[index];
-            return GetUser(
-              uid: uid,
-              builder: (context, o) {
-                if (o == null) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
+        child: friends.isEmpty
+            ? const Center(
+                child: Text('친구가 없습니다. 맞-팔로우를 하세요.'),
+              )
+            : ListView.builder(
+                itemExtent: 60,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                itemCount: friends.length,
+                itemBuilder: (context, index) {
+                  final uid = friends[index];
+                  return GetUser(
+                    uid: uid,
+                    builder: (context, o) {
+                      if (o == null) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+                      return StatefulBuilder(
+                        builder: (context, setStateRow) {
+                          final value = selected.contains(uid);
+                          return UserListTile(
+                            user: o,
+                            trailing: IgnorePointer(
+                              child: Checkbox(
+                                value: value,
+                                onChanged: (v) {},
+                              ),
+                            ),
+                            onTap: () {
+                              setStateRow(() {
+                                if (value) {
+                                  selected.remove(uid);
+                                } else {
+                                  selected.add(uid);
+                                }
+                              });
+                            },
+                          );
+                        },
+                      );
+                    },
                   );
-                }
-                return StatefulBuilder(
-                  builder: (context, setStateRow) {
-                    final value = selected.contains(uid);
-                    return UserListTile(
-                      user: o,
-                      trailing: IgnorePointer(
-                        child: Checkbox(
-                          value: value,
-                          onChanged: (v) {},
-                        ),
-                      ),
-                      onTap: () {
-                        setStateRow(() {
-                          if (value) {
-                            selected.remove(uid);
-                          } else {
-                            selected.add(uid);
-                          }
-                        });
-                      },
-                    );
-                  },
-                );
-              },
-            );
-          },
-        ),
+                },
+              ),
       ),
     );
   }
