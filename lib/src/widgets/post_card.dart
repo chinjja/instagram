@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:instagram/src/models/comments.dart';
 import 'package:instagram/src/models/like.dart';
+import 'package:instagram/src/models/likes.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/pages/comment_page.dart';
@@ -29,21 +31,22 @@ class _PostCardState extends State<PostCard> {
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
-    return StreamBuilder<Tuple2<User, List<Like>>>(
+    final user = widget.user;
+    final isBookmark = post.bookmarks.contains(user.uid);
+    final commentStream = _firestore.posts.comments(postId: post.postId);
+    return StreamBuilder<Tuple2<User, Likes>>(
       stream: Rx.combineLatest2(
         _firestore.users.at(uid: post.uid),
-        _firestore.likes.all(postId: post.postId),
-        (User a, List<Like> b) => Tuple2(a, b),
+        _firestore.posts.likes(postId: post.postId),
+        (User a, Likes b) => Tuple2(a, b),
       ),
       builder: (context, snapshot) {
         final data = snapshot.data;
         final postUser = data?.item1;
         final postUserUrl = postUser?.photoUrl;
         final postUsername = postUser?.username ?? '';
-        final likes = data?.item2 ?? [];
-
-        final isLike =
-            likes.indexWhere((like) => like.uid == widget.user.uid) != -1;
+        final likes = data?.item2;
+        final isLike = likes?.likes.containsKey(widget.user.uid) ?? false;
 
         return Column(
           children: [
@@ -101,7 +104,9 @@ class _PostCardState extends State<PostCard> {
             Row(
               children: [
                 IconButton(
-                  onPressed: _toggleLike,
+                  onPressed: () {
+                    _toggleLike(isLike);
+                  },
                   icon: Icon(
                     isLike ? Icons.favorite : Icons.favorite_outline,
                     color: isLike ? Colors.red : null,
@@ -115,19 +120,12 @@ class _PostCardState extends State<PostCard> {
                 ),
                 const Expanded(child: SizedBox.shrink()),
                 IconButton(
-                  onPressed: _bookmark,
-                  icon: StreamBuilder<bool>(
-                      stream: _firestore.bookmarks.has(
-                        postId: post.postId,
-                        uid: widget.user.uid,
-                      ),
-                      builder: (context, snapshot) {
-                        return Icon(
-                          snapshot.data ?? false
-                              ? Icons.bookmark
-                              : Icons.bookmark_outline,
-                        );
-                      }),
+                  onPressed: () {
+                    _bookmark(isBookmark);
+                  },
+                  icon: Icon(
+                    isBookmark ? Icons.bookmark : Icons.bookmark_outline,
+                  ),
                 ),
               ],
             ),
@@ -139,7 +137,7 @@ class _PostCardState extends State<PostCard> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Text('${likes.length} likes'),
+                    child: Text('${likes?.likes.length} likes'),
                   ),
                   if (post.description.isNotEmpty)
                     Padding(
@@ -166,14 +164,10 @@ class _PostCardState extends State<PostCard> {
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                          future: FirebaseFirestore.instance
-                              .collection('posts')
-                              .doc(post.postId)
-                              .collection('comments')
-                              .get(),
+                      child: StreamBuilder<Comments>(
+                          stream: commentStream,
                           builder: (context, snapshot) {
-                            final len = snapshot.data?.docs.length ?? 0;
+                            final len = snapshot.data?.list.length ?? 0;
                             return Text(
                               'View all $len comments',
                               style: const TextStyle(
@@ -186,9 +180,11 @@ class _PostCardState extends State<PostCard> {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Text(
-                      DateFormat.yMMMd()
-                          .add_jm()
-                          .format(post.datePublished.toDate()),
+                      post.datePublished == null
+                          ? ''
+                          : DateFormat.yMMMd()
+                              .add_jm()
+                              .format(post.datePublished!.toDate()),
                       style: const TextStyle(
                         color: Colors.grey,
                       ),
@@ -203,11 +199,12 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  void _toggleLike() {
-    _firestore.likes.toggle(
-      post: widget.post,
-      uid: widget.user.uid,
-    );
+  void _toggleLike(bool isLike) {
+    if (isLike) {
+      _firestore.posts.unlike(post: widget.post, uid: widget.user.uid);
+    } else {
+      _firestore.posts.like(post: widget.post, uid: widget.user.uid);
+    }
   }
 
   void _comment({required bool autoFocus}) {
@@ -232,10 +229,13 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  void _bookmark() {
-    _firestore.bookmarks.toggle(
-      postId: widget.post.postId,
-      uid: widget.user.uid,
-    );
+  void _bookmark(bool isBookmark) {
+    if (isBookmark) {
+      _firestore.posts
+          .unbookmark(postId: widget.post.postId, uid: widget.user.uid);
+    } else {
+      _firestore.posts
+          .bookmark(postId: widget.post.postId, uid: widget.user.uid);
+    }
   }
 }

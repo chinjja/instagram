@@ -1,33 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:instagram/src/models/activity.dart';
 
-class Like extends Activity {
+class Like {
+  final String uid;
+  final String to;
+  final Timestamp? datePublished;
+
   const Like({
-    required String uid,
-    required String postId,
-    required String to,
-    required Timestamp datePublished,
-  }) : super(
-          uid: uid,
-          postId: postId,
-          to: to,
-          datePublished: datePublished,
-        );
+    required this.uid,
+    required this.to,
+    required this.datePublished,
+  });
 
   Map<String, dynamic> toJson() => {
         'uid': uid,
-        'postId': postId,
         'to': to,
         'datePublished': datePublished,
       };
 
-  static Like fromSnapshot(DocumentSnapshot snapshot) {
-    final data = snapshot.data() as Map<String, dynamic>;
+  static Like fromJson(Map<String, dynamic> json) {
     return Like(
-      uid: data['uid'],
-      postId: data['postId'],
-      to: data['to'],
-      datePublished: data['datePublished'],
+      uid: json['uid'],
+      to: json['to'],
+      datePublished: json['datePublished'],
     );
   }
 }

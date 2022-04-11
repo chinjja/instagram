@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:instagram/src/providers/activity_provider.dart';
-import 'package:instagram/src/providers/bookmark_provider.dart';
 import 'package:instagram/src/providers/chat_provider.dart';
 import 'package:instagram/src/providers/comment_provider.dart';
 import 'package:instagram/src/providers/like_provider.dart';
@@ -17,7 +16,6 @@ class FirestoreMethods {
     required this.posts,
     required this.likes,
     required this.comments,
-    required this.bookmarks,
     required this.activities,
     required this.chats,
     required this.messages,
@@ -26,7 +24,6 @@ class FirestoreMethods {
   final PostProvider posts;
   final LikeProvider likes;
   final CommentProvider comments;
-  final BookmarkProvider bookmarks;
   final ActivityProvider activities;
   final ChatProvider chats;
   final MessageProvider messages;

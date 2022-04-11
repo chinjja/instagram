@@ -30,7 +30,7 @@ class _ActivityCardState extends State<ActivityCard> {
   @override
   void initState() {
     super.initState();
-    _firestore.posts.at(postId: widget.activity.postId).first.then(
+    _firestore.posts.at(postId: widget.activity.refId).first.then(
           (post) => setState(() {
             _post = post;
           }),
@@ -116,9 +116,11 @@ class _ActivityCardState extends State<ActivityCard> {
             ),
           ),
           TextSpan(
-            text: DateFormat.Md()
-                .add_jm()
-                .format(activity.datePublished.toDate()),
+            text: activity.datePublished == null
+                ? ''
+                : DateFormat.Md()
+                    .add_jm()
+                    .format(activity.datePublished!.toDate()),
             style: const TextStyle(
               color: Colors.grey,
               fontWeight: FontWeight.normal,

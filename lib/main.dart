@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:instagram/src/pages/home_page.dart';
 import 'package:instagram/src/pages/welcome.dart';
 import 'package:instagram/src/providers/activity_provider.dart';
-import 'package:instagram/src/providers/bookmark_provider.dart';
 import 'package:instagram/src/providers/chat_provider.dart';
 import 'package:instagram/src/providers/comment_provider.dart';
 import 'package:instagram/src/providers/like_provider.dart';
@@ -50,12 +49,18 @@ void main() async {
 final _storage = StorageMethods();
 final _commentProvider = CommentProvider(storage: _storage);
 final _messages = MessageProvider(storage: _storage);
+final _likeProvider = LikeProvider(storage: _storage);
+final _activityProvider = ActivityProvider(storage: _storage);
 final _firestore = FirestoreMethods(
   users: UserProvider(storage: _storage),
-  posts: PostProvider(storage: _storage, commentProvider: _commentProvider),
+  posts: PostProvider(
+    storage: _storage,
+    commentProvider: _commentProvider,
+    likeProvider: _likeProvider,
+    activityProvider: _activityProvider,
+  ),
   likes: LikeProvider(storage: _storage),
   comments: _commentProvider,
-  bookmarks: BookmarkProvider(storage: _storage),
   activities: ActivityProvider(storage: _storage),
   chats: ChatProvider(storage: _storage, messages: _messages),
   messages: _messages,

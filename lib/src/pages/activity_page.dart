@@ -27,7 +27,7 @@ class _ActivityPageState extends State<ActivityPage> {
       appBar: AppBar(title: const Text('활동')),
       body: SafeArea(
         child: StreamBuilder<List<Activity>>(
-            stream: _firestore.activities.all(uid: currentUser.uid),
+            stream: _firestore.posts.activities(uid: currentUser.uid),
             builder: (context, snapshot) {
               final activities = snapshot.data;
               if (activities == null) {
@@ -46,11 +46,7 @@ class _ActivityPageState extends State<ActivityPage> {
                 itemBuilder: (context, index) {
                   final activity = activities[index];
                   return ActivityCard(
-                    key: ValueKey(
-                      activity is Comment
-                          ? activity.commentId
-                          : activity.runtimeType.toString() + activity.uid,
-                    ),
+                    key: ValueKey('${activity.refType}-${activity.refId}'),
                     activity: activity,
                   );
                 },

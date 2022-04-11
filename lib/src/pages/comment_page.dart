@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/comment.dart';
+import 'package:instagram/src/models/comments.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
@@ -25,7 +26,6 @@ class CommentPage extends StatefulWidget {
 
 class _CommentPageState extends State<CommentPage> {
   late final _firestore = context.read<FirestoreMethods>();
-  final timestamp = Timestamp.now();
 
   @override
   Widget build(BuildContext context) {
@@ -39,18 +39,12 @@ class _CommentPageState extends State<CommentPage> {
         child: Column(
           children: [
             Expanded(
-              child: StreamBuilder<List<Comment>>(
-                  stream: Rx.combineLatest2(
-                    _firestore.comments.all(
-                      postId: post.postId,
-                      start: timestamp,
-                    ),
-                    _firestore.comments
-                        .all(postId: post.postId, end: timestamp),
-                    (List<Comment> a, List<Comment> b) => [...a, ...b],
+              child: StreamBuilder<Comments>(
+                  stream: _firestore.posts.comments(
+                    postId: post.postId,
                   ),
                   builder: (context, snapshot) {
-                    final comments = snapshot.data;
+                    final comments = snapshot.data?.list;
                     if (comments == null) {
                       return const Center(
                         child: CircularProgressIndicator(),
@@ -73,7 +67,7 @@ class _CommentPageState extends State<CommentPage> {
               hintText: '댓글 달기...',
               sendText: '게시',
               onTap: (text) {
-                _firestore.comments.create(
+                _firestore.posts.comment(
                   post: widget.post,
                   uid: widget.user.uid,
                   text: text,

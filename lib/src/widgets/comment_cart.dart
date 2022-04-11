@@ -71,9 +71,11 @@ class _CommentCardState extends State<CommentCard> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        DateFormat.yMMMd()
-                            .add_jm()
-                            .format(comment.datePublished.toDate()),
+                        comment.datePublished == null
+                            ? ''
+                            : DateFormat.yMMMd()
+                                .add_jm()
+                                .format(comment.datePublished!.toDate()),
                         style: const TextStyle(color: Colors.grey),
                       ),
                     ],

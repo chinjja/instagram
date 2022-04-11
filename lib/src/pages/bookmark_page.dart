@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:instagram/src/models/bookmark.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/pages/post_list_page.dart';
@@ -25,16 +24,16 @@ class _BookmarkPageState extends State<BookmarkPage> {
     final currentUser = widget.currentUser;
     return Scaffold(
       appBar: AppBar(title: const Text('저장됨')),
-      body: StreamBuilder<List<Bookmark>>(
-        stream: _firestore.bookmarks.all(uid: currentUser.uid),
+      body: StreamBuilder<List<Post>>(
+        stream: _firestore.posts.bookmarks(uid: currentUser.uid),
         builder: (context, snapshot) {
-          final bookmarks = snapshot.data;
-          if (bookmarks == null) {
+          final posts = snapshot.data;
+          if (posts == null) {
             return const Center(
               child: CircularProgressIndicator(),
             );
           }
-          if (bookmarks.isEmpty) {
+          if (posts.isEmpty) {
             return const Center(
               child: Text('저장된 포스트가 없습니다.'),
             );
@@ -46,39 +45,28 @@ class _BookmarkPageState extends State<BookmarkPage> {
                 crossAxisSpacing: 1,
                 maxCrossAxisExtent: 150,
               ),
-              itemCount: bookmarks.length,
+              itemCount: posts.length,
               itemBuilder: (context, index) {
-                final bookmark = bookmarks[index];
+                final post = posts[index];
                 return AspectRatio(
-                  key: ValueKey(bookmark.postId),
+                  key: ValueKey(post.postId),
                   aspectRatio: 1,
-                  child: StreamBuilder<Post>(
-                    stream: _firestore.posts.at(postId: bookmark.postId),
-                    builder: (context, snapshot) {
-                      final post = snapshot.data;
-                      if (post == null) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      }
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PostListPage(
-                                user: currentUser,
-                                posts: [post],
-                              ),
-                            ),
-                          );
-                        },
-                        child: Image.network(
-                          post.postUrl,
-                          fit: BoxFit.cover,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PostListPage(
+                            user: currentUser,
+                            posts: [post],
+                          ),
                         ),
                       );
                     },
+                    child: Image.network(
+                      post.postUrl,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 );
               },

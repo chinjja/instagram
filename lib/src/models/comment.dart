@@ -1,42 +1,35 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:instagram/src/models/activity.dart';
 
-class Comment extends Activity {
+class Comment {
   final String commentId;
+  final String uid;
+  final String to;
+  final Timestamp? datePublished;
   final String text;
 
   const Comment({
-    required String uid,
-    required String postId,
-    required String to,
-    required Timestamp datePublished,
     required this.commentId,
+    required this.uid,
+    required this.to,
+    required this.datePublished,
     required this.text,
-  }) : super(
-          uid: uid,
-          postId: postId,
-          to: to,
-          datePublished: datePublished,
-        );
+  });
 
   Map<String, dynamic> toJson() => {
         'commentId': commentId,
-        'postId': postId,
         'uid': uid,
         'to': to,
         'text': text,
         'datePublished': datePublished,
       };
 
-  static Comment fromSnapshot(DocumentSnapshot snapshot) {
-    final data = snapshot.data() as Map<String, dynamic>;
+  static Comment fromJson(Map<String, dynamic> json) {
     return Comment(
-      commentId: data['commentId'],
-      postId: data['postId'],
-      uid: data['uid'],
-      to: data['to'],
-      text: data['text'],
-      datePublished: data['datePublished'],
+      commentId: json['commentId'],
+      uid: json['uid'],
+      to: json['to'],
+      text: json['text'],
+      datePublished: json['datePublished'],
     );
   }
 }

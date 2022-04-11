@@ -2,9 +2,8 @@ import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:instagram/src/models/comment.dart';
-import 'package:instagram/src/models/post.dart';
+import 'package:instagram/src/models/comments.dart';
 import 'package:instagram/src/resources/storage_methods.dart';
-import 'package:instagram/src/utils/utils.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
 
@@ -13,70 +12,42 @@ class CommentProvider {
   final _firestore = FirebaseFirestore.instance;
   final StorageMethods storage;
 
-  Stream<Comment> at({required String postId, required String commentId}) {
+  Stream<Comments> at({required String id}) {
     return _firestore
-        .collection('posts')
-        .doc(postId)
         .collection('comments')
-        .doc(commentId)
+        .doc(id)
         .snapshots()
-        .map((event) => Comment.fromSnapshot(event));
+        .map((event) => Comments.fromSnapshot(event));
   }
 
-  Stream<List<Comment>> all(
-      {required String postId, Timestamp? start, Timestamp? end}) {
-    return _firestore
-        .collection('posts')
-        .doc(postId)
-        .collection('comments')
-        .orderBy('datePublished')
-        .where('datePublished', isLessThanOrEqualTo: start)
-        .where('datePublished', isGreaterThan: end)
-        .snapshots()
-        .flatMap((e) => Stream.fromIterable(e.docs)
-            .map((event) => Comment.fromSnapshot(event))
-            .toList()
-            .asStream());
+  void create(WriteBatch batch, String id) {
+    batch.set(_firestore.collection('comments').doc(id),
+        Comments(id: id, list: []).toJson());
   }
 
-  Future<void> create({
-    required Post post,
+  void delete(WriteBatch batch, String id) {
+    batch.delete(_firestore.collection('comments').doc(id));
+  }
+
+  Future<void> comment({
+    required String id,
     required String uid,
+    required String to,
     required String text,
-    WriteBatch? batch,
   }) async {
     text = text.trim();
     assert(text.isNotEmpty);
     final commentId = const Uuid().v1();
     final comment = Comment(
       commentId: commentId,
-      postId: post.postId,
       uid: uid,
-      to: post.uid,
+      to: to,
       text: text,
       datePublished: Timestamp.now(),
     );
-    final ref = _firestore
-        .collection('posts')
-        .doc(post.postId)
-        .collection('comments')
-        .doc(commentId);
-    final data = serverTimestamp(comment.toJson());
     log('create comment: $commentId');
-    if (batch != null) {
-      batch.set(ref, data);
-    } else {
-      await ref.set(data);
-    }
-  }
-
-  Future<void> delete(Comment comment) async {
-    log('delete comment: ${comment.commentId}');
-    await _firestore
-        .collection('posts')
-        .doc(comment.postId)
-        .collection('comments')
-        .doc(comment.commentId)
-        .delete();
+    await _firestore.collection('comments').doc(id).update({
+      'list': FieldValue.arrayUnion([comment.toJson()]),
+    });
   }
 }
