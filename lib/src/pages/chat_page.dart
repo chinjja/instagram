@@ -51,6 +51,8 @@ class _ChatPageState extends State<ChatPage> {
             );
           }
           latestChats = chats;
+          chats.sort((a, b) => b.members[user.uid]!.timestamp
+              .compareTo(a.members[user.uid]!.timestamp));
           return ListView.builder(
             padding: const EdgeInsets.symmetric(vertical: 4),
             itemExtent: 70,
