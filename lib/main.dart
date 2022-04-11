@@ -52,7 +52,10 @@ final _messages = MessageProvider(storage: _storage);
 final _likeProvider = LikeProvider(storage: _storage);
 final _activityProvider = ActivityProvider(storage: _storage);
 final _firestore = FirestoreMethods(
-  users: UserProvider(storage: _storage),
+  users: UserProvider(
+    storage: _storage,
+    activityProvider: _activityProvider,
+  ),
   posts: PostProvider(
     storage: _storage,
     commentProvider: _commentProvider,

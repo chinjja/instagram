@@ -3,15 +3,18 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:instagram/src/models/activities.dart';
 import 'package:instagram/src/models/user.dart' as model;
+import 'package:instagram/src/providers/activity_provider.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/resources/storage_methods.dart';
 import 'package:rxdart/rxdart.dart';
 
 class UserProvider {
-  UserProvider({required this.storage});
+  UserProvider({required this.storage, required this.activityProvider});
   final _firestore = FirebaseFirestore.instance;
   final StorageMethods storage;
+  final ActivityProvider activityProvider;
   final _cache = <String, model.User>{};
 
   Stream<List<model.User>> search({required String username}) {
@@ -114,7 +117,10 @@ class UserProvider {
         .get();
     if (data.docs.isEmpty) {
       log('create user: ${user.uid}');
-      await _firestore.collection('users').doc(user.uid).set(model.User(
+      final batch = _firestore.batch();
+      batch.set(
+          _firestore.collection('users').doc(user.uid),
+          model.User(
             email: user.email!,
             uid: user.uid,
             photoUrl: user.photoURL,
@@ -122,8 +128,15 @@ class UserProvider {
             following: [],
             followers: [],
           ).toJson());
+
+      activityProvider.create(batch, uid: user.uid);
+      await batch.commit();
       return true;
     }
     return false;
+  }
+
+  Stream<Activities> activities({required String uid}) {
+    return activityProvider.at(uid: uid);
   }
 }

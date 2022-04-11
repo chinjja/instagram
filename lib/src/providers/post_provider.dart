@@ -2,7 +2,6 @@ import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:instagram/src/models/activity.dart';
 import 'package:instagram/src/models/comments.dart';
 import 'package:instagram/src/models/likes.dart';
 import 'package:instagram/src/models/post.dart';
@@ -142,15 +141,25 @@ class PostProvider {
   }
 
   Future<void> like({required Post post, required String uid}) async {
-    likeProvider.like(
+    await likeProvider.like(
       id: post.postId,
       uid: uid,
       to: post.uid,
     );
+    await activityProvider
+        .activity(from: uid, uid: post.uid, type: 'like', data: {
+      'postId': post.postId,
+      'uid': uid,
+    });
   }
 
   Future<void> unlike({required Post post, required String uid}) async {
-    likeProvider.unlike(id: post.postId, uid: uid);
+    await likeProvider.unlike(id: post.postId, uid: uid);
+    await activityProvider
+        .activity(from: uid, uid: post.uid, type: 'unlike', data: {
+      'postId': post.postId,
+      'uid': uid,
+    });
   }
 
   Stream<Comments> comments({required String postId}) {
@@ -159,11 +168,13 @@ class PostProvider {
 
   Future<void> comment(
       {required Post post, required String uid, required String text}) async {
-    commentProvider.comment(
+    await commentProvider.comment(
         id: post.postId, uid: uid, to: post.uid, text: text);
-  }
-
-  Stream<List<Activity>> activities({required String uid}) {
-    return const Stream.empty();
+    await activityProvider
+        .activity(from: uid, uid: post.uid, type: 'comment', data: {
+      'postId': post.postId,
+      'uid': uid,
+      'text': text,
+    });
   }
 }

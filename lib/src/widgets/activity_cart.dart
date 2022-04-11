@@ -30,11 +30,13 @@ class _ActivityCardState extends State<ActivityCard> {
   @override
   void initState() {
     super.initState();
-    _firestore.posts.at(postId: widget.activity.refId).first.then(
-          (post) => setState(() {
-            _post = post;
-          }),
-        );
+    if ({'like', 'unlike', 'comment'}.contains(widget.activity.type)) {
+      _firestore.posts.at(postId: widget.activity.data['postId']).first.then(
+            (post) => setState(() {
+              _post = post;
+            }),
+          );
+    }
   }
 
   @override
@@ -46,7 +48,7 @@ class _ActivityCardState extends State<ActivityCard> {
         return ListTile(
           leading: _circleNetwork(user?.photoUrl),
           title: _makeTitle(user, activity),
-          subtitle: activity is Comment?
+          subtitle: activity.type == 'comment'
               ? const Text(
                   '답글 달기',
                   style: TextStyle(
@@ -94,10 +96,12 @@ class _ActivityCardState extends State<ActivityCard> {
 
   Widget _makeTitle(User? user, Activity activity) {
     String text;
-    if (activity is Like) {
+    if (activity.type == 'like') {
       text = '님이 게시물을 좋아합니다. ';
-    } else if (activity is Comment) {
-      text = '님이 댓글을 남겼습니다: ${activity.text}  ';
+    } else if (activity.type == 'unlike') {
+      text = '님이 게시물을 좋아요를 취소했습니다. ';
+    } else if (activity.type == 'comment') {
+      text = '님이 댓글을 남겼습니다: ${activity.data['text']}  ';
     } else {
       throw '님이 unsupport type ';
     }
