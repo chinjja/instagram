@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/activity.dart';
+import 'package:instagram/src/models/bookmarks.dart';
 import 'package:instagram/src/models/comment.dart';
 import 'package:instagram/src/models/like.dart';
 import 'package:instagram/src/models/post.dart';
@@ -31,7 +32,10 @@ class _ActivityCardState extends State<ActivityCard> {
   void initState() {
     super.initState();
     if ({'like', 'unlike', 'comment'}.contains(widget.activity.type)) {
-      _firestore.posts.at(postId: widget.activity.data['postId']).first.then(
+      _firestore.posts
+          .at(uid: widget.activity.uid, postId: widget.activity.data['postId'])
+          .first
+          .then(
             (post) => setState(() {
               _post = post;
             }),
@@ -42,33 +46,43 @@ class _ActivityCardState extends State<ActivityCard> {
   @override
   Widget build(BuildContext context) {
     final activity = widget.activity;
-    return GetUser(
-      uid: activity.uid,
-      builder: (context, user) {
-        return ListTile(
-          leading: _circleNetwork(user?.photoUrl),
-          title: _makeTitle(user, activity),
-          subtitle: activity.type == 'comment'
-              ? const Text(
-                  '답글 달기',
-                  style: TextStyle(
-                    color: Colors.grey,
-                  ),
-                )
-              : null,
-          trailing: _network(_post?.postUrl),
-          onTap: _post == null
-              ? null
-              : () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              PostListPage(user: user!, posts: [_post!])));
-                },
-        );
-      },
-    );
+    return StreamBuilder<Bookmarks>(
+        stream: _firestore.users.bookmarks(uid: activity.uid),
+        builder: (context, snapshot) {
+          final bookmarks = snapshot.data;
+          return GetUser(
+            uid: activity.uid,
+            builder: (context, user) {
+              return ListTile(
+                leading: _circleNetwork(user?.photoUrl),
+                title: _makeTitle(user, activity),
+                subtitle: activity.type == 'comment'
+                    ? const Text(
+                        '답글 달기',
+                        style: TextStyle(
+                          color: Colors.grey,
+                        ),
+                      )
+                    : null,
+                trailing: _network(_post?.postUrl),
+                onTap: _post == null
+                    ? null
+                    : () {
+                        if (bookmarks != null) {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => PostListPage(
+                                        user: user!,
+                                        posts: [_post!],
+                                        bookmarks: bookmarks,
+                                      )));
+                        }
+                      },
+              );
+            },
+          );
+        });
   }
 
   Widget _circleNetwork(String? url) {

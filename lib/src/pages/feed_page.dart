@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:instagram/src/models/bookmarks.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/pages/add_post_page.dart';
@@ -22,12 +23,36 @@ class FeedPage extends StatefulWidget {
 
 class _FeedPageState extends State<FeedPage> {
   late final _firestore = context.read<FirestoreMethods>();
+  late final Stream<List<Post>> _latestFeeds;
+  final subscriptions = CompositeSubscription();
+  late final timestamp = Timestamp.now();
+  late final currentUser = widget.currentUser;
+  late final members = [currentUser.uid, ...currentUser.following];
+
+  @override
+  void initState() {
+    super.initState();
+    _latestFeeds = _firestore.posts.latestFeeds(
+      uids: members,
+      timestamp: timestamp,
+      subscription: subscriptions,
+    );
+  }
+
+  @override
+  void dispose() {
+    subscriptions.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final timestamp = Timestamp.now();
-    final currentUser = widget.currentUser;
-    final members = [currentUser.uid, ...currentUser.following];
+    final bookmarksStream = _firestore.users.bookmarks(uid: currentUser.uid);
+    final postsStream = Rx.combineLatest2(
+      _latestFeeds,
+      _firestore.posts.feeds(uids: members, start: timestamp),
+      (List<Post> a, List<Post> b) => [...a, ...b],
+    );
     return Scaffold(
       appBar: AppBar(
         title: const Text('Instagram'),
@@ -42,39 +67,41 @@ class _FeedPageState extends State<FeedPage> {
           ),
         ],
       ),
-      body: StreamBuilder<List<Post>>(
-        stream: Rx.combineLatest2(
-          _firestore.posts.all(uids: members, end: timestamp),
-          _firestore.posts.all(uids: members, start: timestamp),
-          (List<Post> a, List<Post> b) => [...a, ...b],
-        ),
-        builder: (context, snapshot) {
-          final posts = snapshot.data;
-          if (posts == null) {
-            return const Center(
-              child: CircularProgressIndicator(),
+      body: StreamBuilder<Bookmarks>(
+          stream: bookmarksStream,
+          builder: (context, snapshot) {
+            final bookmarks = snapshot.data;
+            return StreamBuilder<List<Post>>(
+              stream: postsStream,
+              builder: (context, snapshot) {
+                final posts = snapshot.data;
+                if (posts == null) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+                if (posts.isEmpty) {
+                  return const Center(
+                    child: Text('게시물이 없습니다. 팔로잉을 하세요.'),
+                  );
+                }
+                return ListView.separated(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  itemCount: posts.length,
+                  itemBuilder: (context, index) {
+                    final post = posts[index];
+                    return PostCard(
+                      key: ValueKey(post.postId),
+                      bookmarks: bookmarks,
+                      post: post,
+                      user: currentUser,
+                    );
+                  },
+                  separatorBuilder: (context, index) => const Divider(),
+                );
+              },
             );
-          }
-          if (posts.isEmpty) {
-            return const Center(
-              child: Text('게시물이 없습니다. 팔로잉을 하세요.'),
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            itemCount: posts.length,
-            itemBuilder: (context, index) {
-              final post = posts[index];
-              return PostCard(
-                key: ValueKey(post.postId),
-                post: post,
-                user: currentUser,
-              );
-            },
-            separatorBuilder: (context, index) => const Divider(),
-          );
-        },
-      ),
+          }),
     );
   }
 

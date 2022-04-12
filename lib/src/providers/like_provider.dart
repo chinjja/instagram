@@ -27,6 +27,7 @@ class LikeProvider {
         .collection('likes')
         .doc(id)
         .snapshots()
+        .where((doc) => doc.data() != null)
         .map((doc) => Likes.fromSnapshot(doc))
         .doOnError((_, e) => log(e.toString()));
   }

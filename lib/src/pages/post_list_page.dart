@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:instagram/src/models/bookmarks.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/widgets/post_card.dart';
@@ -8,26 +9,33 @@ class PostListPage extends StatelessWidget {
     Key? key,
     required this.user,
     required this.posts,
+    required this.bookmarks,
   }) : super(key: key);
   final User user;
-  final List<Post> posts;
+  final Bookmarks bookmarks;
+  final List<Post>? posts;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
-      body: ListView.separated(
-        itemCount: posts.length,
-        itemBuilder: (context, index) {
-          final post = posts[index];
-          return PostCard(
-            key: ValueKey(post.postId),
-            post: post,
-            user: user,
-          );
-        },
-        separatorBuilder: (context, index) => const Divider(),
-      ),
+      body: posts == null
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : ListView.separated(
+              itemCount: posts!.length,
+              itemBuilder: (context, index) {
+                final post = posts![index];
+                return PostCard(
+                  key: ValueKey(post.postId),
+                  bookmarks: bookmarks,
+                  post: post,
+                  user: user,
+                );
+              },
+              separatorBuilder: (context, index) => const Divider(),
+            ),
     );
   }
 }

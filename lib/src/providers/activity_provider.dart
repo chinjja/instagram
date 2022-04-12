@@ -15,6 +15,7 @@ class ActivityProvider {
         .collection('activities')
         .doc(uid)
         .snapshots()
+        .where((doc) => doc.data() != null)
         .map((event) => Activities.fromSnapshot(event));
   }
 
