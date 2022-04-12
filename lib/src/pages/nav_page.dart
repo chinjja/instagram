@@ -12,9 +12,11 @@ class NavPage extends StatefulWidget {
     Key? key,
     required this.user,
     required this.onShowChat,
+    required this.onTabChanged,
   }) : super(key: key);
   final User user;
   final void Function() onShowChat;
+  final void Function(int tab) onTabChanged;
   @override
   State<NavPage> createState() => _NavPageState();
 }
@@ -65,10 +67,13 @@ class _NavPageState extends State<NavPage> {
             _nav(4, Icons.person, Icons.person_outline),
           ],
           onTap: (page) {
-            setState(() {
-              tabController.jumpToPage(page);
-              _page = page;
-            });
+            if (_page != page) {
+              setState(() {
+                tabController.jumpToPage(page);
+                _page = page;
+              });
+              widget.onTabChanged(page);
+            }
           },
         );
       }),

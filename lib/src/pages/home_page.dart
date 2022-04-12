@@ -13,6 +13,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final chatController = PageController();
+  int tab = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +27,7 @@ class _HomePageState extends State<HomePage> {
           );
         }
         return PageView(
-          // physics: _page == 0 ? null : const NeverScrollableScrollPhysics(),
+          physics: tab == 0 ? null : const NeverScrollableScrollPhysics(),
           controller: chatController,
           children: [
             NavPage(
@@ -37,6 +38,11 @@ class _HomePageState extends State<HomePage> {
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.ease,
                 );
+              },
+              onTabChanged: (value) {
+                setState(() {
+                  tab = value;
+                });
               },
             ),
             ChatPage(
