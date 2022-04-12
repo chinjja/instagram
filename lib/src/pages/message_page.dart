@@ -195,21 +195,25 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
             ),
       builder: (context, snapshot) {
         final messages = snapshot.data ?? [];
-        return ListView.builder(
-          reverse: true,
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          itemCount: messages.length,
-          itemBuilder: (context, index) {
-            final message = messages[index];
-            return MessageCard(
-              key: ValueKey(message.messageId),
-              sender: widget.currentUser,
-              prevMessage:
-                  index == messages.length - 1 ? null : messages[index + 1],
-              message: message,
-            );
+        return GestureDetector(
+          onTap: () {
+            FocusScope.of(context).unfocus();
           },
+          child: ListView.builder(
+            reverse: true,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            itemCount: messages.length,
+            itemBuilder: (context, index) {
+              final message = messages[index];
+              return MessageCard(
+                key: ValueKey(message.messageId),
+                sender: widget.currentUser,
+                prevMessage:
+                    index == messages.length - 1 ? null : messages[index + 1],
+                message: message,
+              );
+            },
+          ),
         );
       },
     );
