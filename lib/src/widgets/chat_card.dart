@@ -124,15 +124,17 @@ class _ChatCardState extends State<ChatCard> {
       return SizedBox(
         width: 48,
         height: 48,
-        child: Wrap(
-          children: members?.map((e) {
-                final photoUrl = e.photoUrl;
-                return CircleAvatar(
-                  radius: 12,
-                  backgroundImage: networkImage(photoUrl),
-                );
-              }).toList() ??
-              [],
+        child: Center(
+          child: Wrap(
+            children: members?.map((e) {
+                  final photoUrl = e.photoUrl;
+                  return CircleAvatar(
+                    radius: 12,
+                    backgroundImage: networkImage(photoUrl),
+                  );
+                }).toList() ??
+                [],
+          ),
         ),
       );
     }
@@ -177,6 +179,7 @@ class _ChatCardState extends State<ChatCard> {
             users?.map((e) => e.username).join(', ') ?? '',
             maxLines: 1,
             overflow: TextOverflow.fade,
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(width: 8),
           Text(

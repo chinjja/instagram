@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:instagram/src/models/bookmarks.dart';
 import 'package:instagram/src/models/comments.dart';
 import 'package:instagram/src/models/like.dart';
 import 'package:instagram/src/models/likes.dart';
@@ -19,7 +20,9 @@ class PostCard extends StatefulWidget {
     Key? key,
     required this.post,
     required this.user,
+    required this.bookmarks,
   }) : super(key: key);
+  final Bookmarks? bookmarks;
   final Post post;
   final User user;
   @override
@@ -30,9 +33,10 @@ class _PostCardState extends State<PostCard> {
   late final _firestore = context.read<FirestoreMethods>();
   @override
   Widget build(BuildContext context) {
+    final bookmarks = widget.bookmarks;
     final post = widget.post;
     final user = widget.user;
-    final isBookmark = post.bookmarks.contains(user.uid);
+    final isBookmark = bookmarks?.posts.containsKey(post.postId) ?? false;
     final commentStream = _firestore.posts.comments(postId: post.postId);
     return StreamBuilder<Tuple2<User, Likes>>(
       stream: Rx.combineLatest2(
@@ -77,7 +81,10 @@ class _PostCardState extends State<PostCard> {
                         PopupMenuItem(
                           child: const Text('Delete'),
                           onTap: () {
-                            _firestore.posts.delete(postId: post.postId);
+                            _firestore.posts.delete(
+                              postId: post.postId,
+                              uid: post.uid,
+                            );
                           },
                         ),
                       ];
@@ -231,11 +238,16 @@ class _PostCardState extends State<PostCard> {
 
   void _bookmark(bool isBookmark) {
     if (isBookmark) {
-      _firestore.posts
-          .unbookmark(postId: widget.post.postId, uid: widget.user.uid);
+      _firestore.users.unbookmark(
+        postId: widget.post.postId,
+        uid: widget.user.uid,
+      );
     } else {
-      _firestore.posts
-          .bookmark(postId: widget.post.postId, uid: widget.user.uid);
+      _firestore.users.bookmark(
+        postId: widget.post.postId,
+        uid: widget.user.uid,
+        postUrl: widget.post.postUrl,
+      );
     }
   }
 }

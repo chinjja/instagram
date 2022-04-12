@@ -12,11 +12,13 @@ class LikeProvider {
   final StorageMethods storage;
 
   void create(WriteBatch batch, String id) {
+    log('create like: $id');
     batch.set(_firestore.collection('likes').doc(id),
         Likes(id: id, likes: {}).toJson());
   }
 
   void delete(WriteBatch batch, String id) {
+    log('delete like: $id');
     batch.delete(_firestore.collection('likes').doc(id));
   }
 
@@ -25,6 +27,7 @@ class LikeProvider {
         .collection('likes')
         .doc(id)
         .snapshots()
+        .where((doc) => doc.data() != null)
         .map((doc) => Likes.fromSnapshot(doc))
         .doOnError((_, e) => log(e.toString()));
   }

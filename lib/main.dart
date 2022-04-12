@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:instagram/src/pages/home_page.dart';
 import 'package:instagram/src/pages/welcome.dart';
 import 'package:instagram/src/providers/activity_provider.dart';
+import 'package:instagram/src/providers/bookmark_provider.dart';
 import 'package:instagram/src/providers/chat_provider.dart';
 import 'package:instagram/src/providers/comment_provider.dart';
 import 'package:instagram/src/providers/like_provider.dart';
 import 'package:instagram/src/providers/message_provider.dart';
+import 'package:instagram/src/providers/my_post_provider.dart';
 import 'package:instagram/src/providers/post_provider.dart';
 import 'package:instagram/src/providers/user_provider.dart';
 import 'package:instagram/src/resources/auth_methods.dart';
@@ -51,13 +53,20 @@ final _commentProvider = CommentProvider(storage: _storage);
 final _messages = MessageProvider(storage: _storage);
 final _likeProvider = LikeProvider(storage: _storage);
 final _activityProvider = ActivityProvider(storage: _storage);
+final _userProvider = UserProvider(
+  storage: _storage,
+  activityProvider: _activityProvider,
+  bookmarkProvider: BookmarkProvider(storage: _storage),
+  myPostProvider: MyPostProvider(storage: _storage),
+);
 final _firestore = FirestoreMethods(
-  users: UserProvider(storage: _storage),
+  users: _userProvider,
   posts: PostProvider(
     storage: _storage,
     commentProvider: _commentProvider,
     likeProvider: _likeProvider,
     activityProvider: _activityProvider,
+    userProvider: _userProvider,
   ),
   likes: LikeProvider(storage: _storage),
   comments: _commentProvider,

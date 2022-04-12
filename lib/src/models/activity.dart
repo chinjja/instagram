@@ -1,43 +1,31 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Activity {
-  final String activityId;
-  final String refType;
-  final String refId;
+  final String type;
   final String uid;
-  final String to;
-  final String text;
   final Timestamp? datePublished;
+  final Map<String, dynamic> data;
 
   const Activity({
-    required this.activityId,
-    required this.refType,
-    required this.refId,
+    required this.type,
     required this.uid,
-    required this.to,
-    required this.text,
     required this.datePublished,
+    required this.data,
   });
 
   Map<String, dynamic> toJson() => {
-        'activityId': activityId,
-        'refType': refType,
-        'refId': refId,
+        'type': type,
         'uid': uid,
-        'to': to,
-        'text': text,
         'datePublished': datePublished,
+        'data': data,
       };
 
   static Activity fromJson(Map<String, dynamic> json) {
     return Activity(
-      activityId: json['activityId'],
-      refType: json['refType'],
-      refId: json['refId'],
+      type: json['type'],
       uid: json['uid'],
-      to: json['to'],
-      text: json['text'],
       datePublished: json['datePublished'],
+      data: json['data'],
     );
   }
 }

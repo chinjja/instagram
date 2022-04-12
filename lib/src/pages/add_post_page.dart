@@ -125,7 +125,7 @@ class _AddPostPageState extends State<AddPostPage> {
     await _firestore.posts.create(
       description: _description.text,
       file: _image!,
-      user: widget.user,
+      uid: widget.user.uid,
     );
 
     Navigator.pop(context);

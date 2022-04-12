@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:instagram/src/models/activities.dart';
 import 'package:instagram/src/models/activity.dart';
 import 'package:instagram/src/models/comment.dart';
 import 'package:instagram/src/models/user.dart';
@@ -26,10 +27,10 @@ class _ActivityPageState extends State<ActivityPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('활동')),
       body: SafeArea(
-        child: StreamBuilder<List<Activity>>(
-            stream: _firestore.posts.activities(uid: currentUser.uid),
+        child: StreamBuilder<Activities>(
+            stream: _firestore.users.activities(uid: currentUser.uid),
             builder: (context, snapshot) {
-              final activities = snapshot.data;
+              final activities = snapshot.data?.list;
               if (activities == null) {
                 return const Center(
                   child: CircularProgressIndicator(),
@@ -44,9 +45,9 @@ class _ActivityPageState extends State<ActivityPage> {
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 itemCount: activities.length,
                 itemBuilder: (context, index) {
-                  final activity = activities[index];
+                  final activity = activities[activities.length - index - 1];
                   return ActivityCard(
-                    key: ValueKey('${activity.refType}-${activity.refId}'),
+                    key: ValueKey('$index'),
                     activity: activity,
                   );
                 },

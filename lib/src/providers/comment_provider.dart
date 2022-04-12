@@ -17,6 +17,7 @@ class CommentProvider {
         .collection('comments')
         .doc(id)
         .snapshots()
+        .where((doc) => doc.data() != null)
         .map((event) => Comments.fromSnapshot(event));
   }
 

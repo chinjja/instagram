@@ -3,15 +3,29 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:instagram/src/models/activities.dart';
+import 'package:instagram/src/models/bookmarks.dart';
+import 'package:instagram/src/models/my_post.dart';
 import 'package:instagram/src/models/user.dart' as model;
+import 'package:instagram/src/providers/activity_provider.dart';
+import 'package:instagram/src/providers/bookmark_provider.dart';
+import 'package:instagram/src/providers/my_post_provider.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/resources/storage_methods.dart';
 import 'package:rxdart/rxdart.dart';
 
 class UserProvider {
-  UserProvider({required this.storage});
+  UserProvider({
+    required this.storage,
+    required this.activityProvider,
+    required this.bookmarkProvider,
+    required this.myPostProvider,
+  });
   final _firestore = FirebaseFirestore.instance;
   final StorageMethods storage;
+  final ActivityProvider activityProvider;
+  final BookmarkProvider bookmarkProvider;
+  final MyPostProvider myPostProvider;
   final _cache = <String, model.User>{};
 
   Stream<List<model.User>> search({required String username}) {
@@ -50,7 +64,8 @@ class UserProvider {
         .collection('users')
         .doc(uid)
         .snapshots()
-        .map((event) => model.User.fromSnapshot(event))
+        .where((doc) => doc.data() != null)
+        .map((doc) => model.User.fromSnapshot(doc))
         .doOnData((e) => _cache[e.uid] = e)
         .doOnError((_, e) => log(e.toString()));
   }
@@ -60,9 +75,9 @@ class UserProvider {
     required String to,
     required bool follow,
   }) async {
-    log('follow user: $uid -> $to');
     final batch = _firestore.batch();
     if (follow) {
+      log('unfollow user: $uid -> $to');
       batch.update(_firestore.collection('users').doc(uid), {
         'following': FieldValue.arrayUnion([to]),
       });
@@ -70,6 +85,7 @@ class UserProvider {
         'followers': FieldValue.arrayUnion([uid]),
       });
     } else {
+      log('follow user: $uid -> $to');
       batch.update(_firestore.collection('users').doc(uid), {
         'following': FieldValue.arrayRemove([to]),
       });
@@ -113,7 +129,10 @@ class UserProvider {
         .get();
     if (data.docs.isEmpty) {
       log('create user: ${user.uid}');
-      await _firestore.collection('users').doc(user.uid).set(model.User(
+      final batch = _firestore.batch();
+      batch.set(
+          _firestore.collection('users').doc(user.uid),
+          model.User(
             email: user.email!,
             uid: user.uid,
             photoUrl: user.photoURL,
@@ -121,8 +140,53 @@ class UserProvider {
             following: [],
             followers: [],
           ).toJson());
+
+      activityProvider.create(batch, uid: user.uid);
+      bookmarkProvider.create(batch, id: user.uid);
+      myPostProvider.create(batch, uid: user.uid);
+      await batch.commit();
       return true;
     }
     return false;
+  }
+
+  Stream<Activities> activities({required String uid}) {
+    return activityProvider.at(uid: uid);
+  }
+
+  Future<void> bookmark(
+      {required String postId,
+      required String postUrl,
+      required String uid}) async {
+    await bookmarkProvider.bookmark(postId: postId, postUrl: postUrl, id: uid);
+  }
+
+  Future<void> unbookmark({required String postId, required String uid}) async {
+    await bookmarkProvider.unbookmark(postId: postId, id: uid);
+  }
+
+  Stream<Bookmarks> bookmarks({required String uid}) {
+    return bookmarkProvider.at(id: uid);
+  }
+
+  void addPost(
+    WriteBatch batch, {
+    required String postId,
+    required String postUrl,
+    required String uid,
+  }) {
+    myPostProvider.add(batch, postId: postId, postUrl: postUrl, uid: uid);
+  }
+
+  void removePost(
+    WriteBatch batch, {
+    required String postId,
+    required String uid,
+  }) {
+    myPostProvider.remove(batch, postId: postId, uid: uid);
+  }
+
+  Stream<MyPosts> posts({required String uid}) {
+    return myPostProvider.at(uid: uid);
   }
 }

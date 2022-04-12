@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/chat.dart';
@@ -35,8 +37,9 @@ class MessagePage extends StatefulWidget {
 
 class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
   late final _firestore = context.read<FirestoreMethods>();
-  final timestamp = Timestamp.now();
+  late final Timestamp timestamp;
   late Chat? chat = widget.chat;
+  StreamSubscription? subscription;
 
   @override
   void initState() {
@@ -47,16 +50,21 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
           .first
           .then((value) => setState(() {
                 chat = value;
+                initChat(chat!);
               }))
           .onError((error, stackTrace) {});
     }
     checkMessage();
+    if (chat != null) {
+      initChat(chat!);
+    }
     WidgetsBinding.instance?.addObserver(this);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance?.removeObserver(this);
+    subscription?.cancel();
     checkMessage();
     super.dispose();
   }
@@ -66,6 +74,13 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused) {
       checkMessage();
     }
+  }
+
+  void initChat(Chat chat) {
+    timestamp = Timestamp.now();
+    subscription?.cancel();
+    subscription = _firestore.messages
+        .listenLasts(chatId: chat.chatId, timestamp: timestamp);
   }
 
   void checkMessage() {
@@ -170,27 +185,35 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
       stream: chat == null
           ? null
           : Rx.combineLatest2(
-              _firestore.messages.all(chatId: chat!.chatId, end: timestamp),
-              _firestore.messages.all(chatId: chat!.chatId, start: timestamp),
+              _firestore.messages.lasts(chatId: chat!.chatId),
+              _firestore.messages.all(
+                chatId: chat!.chatId,
+                start: timestamp,
+                limit: 25,
+              ),
               (List<Message> a, List<Message> b) => [...a, ...b],
             ),
       builder: (context, snapshot) {
         final messages = snapshot.data ?? [];
-        return ListView.builder(
-          reverse: true,
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          itemCount: messages.length,
-          itemBuilder: (context, index) {
-            final message = messages[index];
-            return MessageCard(
-              key: ValueKey(message.messageId),
-              sender: widget.currentUser,
-              prevMessage:
-                  index == messages.length - 1 ? null : messages[index + 1],
-              message: message,
-            );
+        return GestureDetector(
+          onTap: () {
+            FocusScope.of(context).unfocus();
           },
+          child: ListView.builder(
+            reverse: true,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            itemCount: messages.length,
+            itemBuilder: (context, index) {
+              final message = messages[index];
+              return MessageCard(
+                key: ValueKey(message.messageId),
+                sender: widget.currentUser,
+                prevMessage:
+                    index == messages.length - 1 ? null : messages[index + 1],
+                message: message,
+              );
+            },
+          ),
         );
       },
     );
@@ -209,6 +232,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
           );
           setState(() {
             chat = c;
+            initChat(chat!);
           });
         }
         _firestore.messages.send(

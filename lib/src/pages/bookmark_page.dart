@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:instagram/src/models/bookmarks.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/pages/post_list_page.dart';
@@ -24,10 +25,11 @@ class _BookmarkPageState extends State<BookmarkPage> {
     final currentUser = widget.currentUser;
     return Scaffold(
       appBar: AppBar(title: const Text('저장됨')),
-      body: StreamBuilder<List<Post>>(
-        stream: _firestore.posts.bookmarks(uid: currentUser.uid),
+      body: StreamBuilder<Bookmarks>(
+        stream: _firestore.users.bookmarks(uid: currentUser.uid),
         builder: (context, snapshot) {
-          final posts = snapshot.data;
+          final bookmarks = snapshot.data;
+          final posts = bookmarks?.posts.values.toList();
           if (posts == null) {
             return const Center(
               child: CircularProgressIndicator(),
@@ -52,13 +54,17 @@ class _BookmarkPageState extends State<BookmarkPage> {
                   key: ValueKey(post.postId),
                   aspectRatio: 1,
                   child: GestureDetector(
-                    onTap: () {
+                    onTap: () async {
+                      final obj = await _firestore.posts
+                          .at(uid: bookmarks!.id, postId: post.postId)
+                          .first;
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => PostListPage(
                             user: currentUser,
-                            posts: [post],
+                            posts: [obj],
+                            bookmarks: bookmarks,
                           ),
                         ),
                       );
