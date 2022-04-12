@@ -22,6 +22,8 @@ class NavPage extends StatefulWidget {
 class _NavPageState extends State<NavPage> {
   final tabController = PageController();
   int _page = 0;
+  final pageKey = const PageStorageKey('feed');
+  final pageBucket = PageStorageBucket();
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +34,13 @@ class _NavPageState extends State<NavPage> {
         physics: const NeverScrollableScrollPhysics(),
         controller: tabController,
         children: [
-          FeedPage(
-            currentUser: user,
-            onShowChat: widget.onShowChat,
+          PageStorage(
+            key: pageKey,
+            bucket: pageBucket,
+            child: FeedPage(
+              currentUser: user,
+              onShowChat: widget.onShowChat,
+            ),
           ),
           const SearchPage(),
           ActivityPage(
