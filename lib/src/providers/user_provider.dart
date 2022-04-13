@@ -28,10 +28,14 @@ class UserProvider {
   final MyPostProvider myPostProvider;
   final _cache = <String, model.User>{};
 
-  Stream<List<model.User>> search({required String username}) {
+  Stream<List<model.User>> search({
+    required String username,
+    required int limit,
+  }) {
     return _firestore
         .collection('users')
         .where('username', isGreaterThanOrEqualTo: username)
+        .limit(limit)
         .snapshots()
         .flatMap((e) => Stream.fromIterable(e.docs)
             .map((event) => model.User.fromSnapshot(event))

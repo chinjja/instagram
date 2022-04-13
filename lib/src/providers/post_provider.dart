@@ -204,7 +204,6 @@ class PostProvider {
     await activityProvider
         .activity(from: uid, uid: post.uid, type: 'like', data: {
       'postId': post.postId,
-      'uid': uid,
     });
   }
 
@@ -213,7 +212,6 @@ class PostProvider {
     await activityProvider
         .activity(from: uid, uid: post.uid, type: 'unlike', data: {
       'postId': post.postId,
-      'uid': uid,
     });
   }
 
@@ -228,7 +226,6 @@ class PostProvider {
     await activityProvider
         .activity(from: uid, uid: post.uid, type: 'comment', data: {
       'postId': post.postId,
-      'uid': uid,
       'text': text,
     });
   }

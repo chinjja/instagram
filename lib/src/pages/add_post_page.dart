@@ -58,8 +58,9 @@ class _AddPostPageState extends State<AddPostPage> {
             child: const LinearProgressIndicator(),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 InkWell(
                   onTap: () async {
@@ -81,10 +82,15 @@ class _AddPostPageState extends State<AddPostPage> {
                         : Image.memory(_image!),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
                     controller: _description,
+                    maxLength: 1000,
+                    minLines: 3,
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
                     decoration: const InputDecoration(
                       hintText: '문구 입력...',
                       border: InputBorder.none,
