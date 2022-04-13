@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:instagram/src/models/bookmarks.dart';
 import 'package:instagram/src/models/my_post.dart';
 import 'package:instagram/src/models/post.dart';
@@ -15,6 +16,7 @@ import 'package:instagram/src/widgets/current_user.dart';
 import 'package:instagram/src/widgets/get_user.dart';
 import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({
@@ -93,8 +95,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                   child: Column(
                                     children: [
                                       Padding(
-                                        padding:
-                                            const EdgeInsets.only(right: 24),
+                                        padding: const EdgeInsets.only(
+                                            right: 24, bottom: 4),
                                         child: Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
@@ -142,11 +144,32 @@ class _ProfilePageState extends State<ProfilePage> {
                                           ],
                                         ),
                                       ),
+                                      if (user.website != null)
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 2,
+                                            vertical: 6,
+                                          ),
+                                          child: Linkify(
+                                            text: user.website ?? '',
+                                            onOpen: (link) async {
+                                              if (await canLaunch(link.url)) {
+                                                await launch(link.url);
+                                              } else {
+                                                showSnackbar(
+                                                    context,
+                                                    'Cannot launch ' +
+                                                        link.url);
+                                              }
+                                            },
+                                          ),
+                                        ),
                                       Container(
                                         width: double.infinity,
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 4,
-                                          vertical: 8,
+                                          horizontal: 2,
+                                          vertical: 6,
                                         ),
                                         child: Text(user.state ?? ''),
                                       ),

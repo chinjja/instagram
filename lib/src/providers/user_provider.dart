@@ -105,6 +105,7 @@ class UserProvider {
     Uint8List? photo,
     String? username,
     String? state,
+    String? website,
   }) async {
     final data = <String, Object?>{};
     if (photo != null) {
@@ -120,6 +121,9 @@ class UserProvider {
     }
     if (state != null) {
       data['state'] = state;
+    }
+    if (website != null) {
+      data['website'] = website;
     }
     log('update user: ${user.uid}');
     await _firestore.collection('users').doc(user.uid).update(data);

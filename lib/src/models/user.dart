@@ -5,6 +5,7 @@ class User {
   final String uid;
   final String username;
   final String? state;
+  final String? website;
   final String? photoUrl;
   final List<String> following;
   final List<String> followers;
@@ -15,6 +16,7 @@ class User {
     this.photoUrl,
     required this.username,
     this.state,
+    this.website,
     required this.following,
     required this.followers,
   });
@@ -30,6 +32,7 @@ class User {
   Map<String, dynamic> toJson() => {
         'username': username,
         'state': state,
+        'website': website,
         'uid': uid,
         'email': email,
         'photoUrl': photoUrl,
@@ -42,6 +45,7 @@ class User {
     return User(
       username: data['username'],
       state: data['state'],
+      website: data['website'],
       uid: data['uid'],
       email: data['email'],
       photoUrl: data['photoUrl'],
