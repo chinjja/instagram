@@ -23,34 +23,19 @@ class FeedPage extends StatefulWidget {
 
 class _FeedPageState extends State<FeedPage> {
   late final _firestore = context.read<FirestoreMethods>();
-  late final Stream<List<Post>> _latestFeeds;
-  final subscriptions = CompositeSubscription();
-  late final timestamp = Timestamp.now();
-  late final currentUser = widget.currentUser;
-  late final members = [currentUser.uid, ...currentUser.following];
-
-  @override
-  void initState() {
-    super.initState();
-    _latestFeeds = _firestore.posts.latestFeeds(
-      uids: members,
-      timestamp: timestamp,
-      subscription: subscriptions,
-    );
-  }
-
-  @override
-  void dispose() {
-    subscriptions.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
+    final start = Timestamp.now();
+    final end = Timestamp.fromDate(
+      start.toDate().subtract(const Duration(days: 7)),
+    );
+    final currentUser = widget.currentUser;
+    final members = [currentUser.uid, ...currentUser.following];
     final bookmarksStream = _firestore.users.bookmarks(uid: currentUser.uid);
     final postsStream = Rx.combineLatest2(
-      _latestFeeds,
-      _firestore.posts.feeds(uids: members, start: timestamp),
+      _firestore.posts.feeds(uids: members, end: start),
+      _firestore.posts.feeds(uids: members, start: start, end: end),
       (List<Post> a, List<Post> b) => [...a, ...b],
     );
     return Scaffold(
