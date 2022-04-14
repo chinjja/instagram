@@ -10,7 +10,6 @@ import 'package:instagram/src/pages/post_list_page.dart';
 import 'package:instagram/src/resources/auth_methods.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
-import 'package:instagram/src/widgets/get_user.dart';
 import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -374,7 +373,25 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _signOut() async {
-    await _auth.signOut(context);
+    await showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            content: const Text('로그아웃 하시겠습니까?'),
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    _auth.signOut(context);
+                  },
+                  child: const Text('로그아웃')),
+              TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('취소')),
+            ],
+          );
+        });
   }
 
   void _showFollows({
