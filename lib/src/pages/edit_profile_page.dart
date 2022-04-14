@@ -133,14 +133,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
       final username = _username.text.trim();
       final state = _state.text.trim();
       final website = _website.text.trim();
-      await _firestore.users.update(
+      final value = await _firestore.users.update(
         widget.user,
         photo: _image,
         username: username.isEmpty ? null : username,
         state: state.isEmpty ? null : state,
         website: website.isEmpty ? null : website,
       );
-      Navigator.pop(context);
+      Navigator.pop(context, value);
     } catch (e) {
       showSnackbar(context, e.toString());
     } finally {

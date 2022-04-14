@@ -16,6 +16,13 @@ class UserProvider {
   final StorageMethods storage;
   final _cache = <String, model.User>{};
 
+  Future<model.User> getCurrentUser() async {
+    final user = await once(uid: currentUid);
+    return user!;
+  }
+
+  String get currentUid => FirebaseAuth.instance.currentUser!.uid;
+
   Future<List<model.User>> search({
     required String username,
     required int limit,
@@ -90,14 +97,14 @@ class UserProvider {
     await batch.commit();
   }
 
-  Future<void> update(
+  Future<model.User> update(
     model.User user, {
     Uint8List? photo,
     String? username,
     String? state,
     String? website,
   }) async {
-    final data = <String, Object?>{};
+    final data = <String, String>{};
     if (photo != null) {
       final result = await storage.uploadImageData(
         photo,
@@ -117,6 +124,15 @@ class UserProvider {
     }
     log('update user: ${user.uid}');
     await _firestore.collection('users').doc(user.uid).update(data);
+    return model.User(
+      email: user.email,
+      uid: user.uid,
+      username: data['username'] ?? user.username,
+      state: data['state'] ?? user.state,
+      website: data['website'] ?? user.website,
+      following: [...user.following],
+      followers: [...user.followers],
+    );
   }
 
   Future<bool> create(UserCredential credential) async {

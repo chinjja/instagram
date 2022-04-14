@@ -10,7 +10,6 @@ import 'package:instagram/src/pages/post_list_page.dart';
 import 'package:instagram/src/resources/auth_methods.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
-import 'package:instagram/src/widgets/current_user.dart';
 import 'package:instagram/src/widgets/get_user.dart';
 import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
@@ -31,212 +30,206 @@ class _ProfilePageState extends State<ProfilePage> {
   late final _auth = context.read<AuthMethods>();
   late final _firestore = context.read<FirestoreMethods>();
   final _gridPostsKey = GlobalKey();
+  late User user = widget.user;
+  late var followers = user.followers;
+  late var following = user.following;
+
+  Future<void> _refresh() async {
+    final value = await _firestore.users.once(uid: user.uid);
+    if (value != null) {
+      setState(() {
+        user = value;
+        followers = user.followers;
+        following = user.following;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final user1 = widget.user;
-    final postStream = _firestore.posts.list(uid: user1.uid, limit: 10);
-    return GetUser(
-      uid: user1.uid,
-      builder: (context, snapshot) {
-        final user = snapshot ?? user1;
-        return CurrentUser(
-          builder: (context, currentUser) {
-            if (currentUser == null) {
-              return const SizedBox.shrink();
+    final postStream = _firestore.posts.list(uid: user.uid, limit: 10);
+
+    final currentUid = _firestore.users.currentUid;
+    final isOnwer = user.uid == currentUid;
+    final isFollower = followers.contains(currentUid);
+    final isFollowing = following.contains(currentUid);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(user.username),
+        actions: isOnwer
+            ? [
+                TextButton(
+                  onPressed: _signOut,
+                  child: const Text('Sign Out'),
+                ),
+              ]
+            : null,
+      ),
+      body: FutureBuilder<List<Post>>(
+          future: postStream,
+          builder: (context, snapshot) {
+            final posts = snapshot.data;
+            if (posts == null) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
             }
-
-            final followers = user.followers;
-            final following = user.following;
-            final isOnwer = user.uid == currentUser.uid;
-            final isFollower = followers.contains(currentUser.uid);
-            final isFollowing = following.contains(currentUser.uid);
-
-            return Scaffold(
-              appBar: AppBar(
-                title: Text(user.username),
-                actions: isOnwer
-                    ? [
-                        TextButton(
-                          onPressed: _signOut,
-                          child: const Text('Sign Out'),
-                        ),
-                      ]
-                    : null,
-              ),
-              body: FutureBuilder<List<Post>>(
-                  future: postStream,
-                  builder: (context, snapshot) {
-                    final posts = snapshot.data;
-                    if (posts == null) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-                    return DefaultTabController(
-                      length: 2,
-                      child: NestedScrollView(
-                        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.only(
-                                top: 16,
-                                left: 16,
-                                right: 16,
+            return DefaultTabController(
+              length: 2,
+              child: NestedScrollView(
+                headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        top: 16,
+                        left: 16,
+                        right: 16,
+                      ),
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(right: 24, bottom: 4),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                CircleAvatar(
+                                  radius: 36,
+                                  backgroundImage: networkImage(user.photoUrl),
+                                ),
+                                _tap(
+                                  value: posts.length,
+                                  name: '게시물',
+                                  onTap: () {
+                                    Scrollable.ensureVisible(
+                                      _gridPostsKey.currentContext!,
+                                      duration:
+                                          const Duration(milliseconds: 250),
+                                    );
+                                  },
+                                ),
+                                _tap(
+                                  value: followers.length,
+                                  name: '팔로워',
+                                  onTap: () {
+                                    _showFollows(
+                                      user: user,
+                                      followers: followers,
+                                      following: following,
+                                      showFollows: true,
+                                    );
+                                  },
+                                ),
+                                _tap(
+                                  value: following.length,
+                                  name: '팔로잉',
+                                  onTap: () {
+                                    _showFollows(
+                                      user: user,
+                                      followers: followers,
+                                      following: following,
+                                      showFollows: false,
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (user.website != null)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 2,
+                                vertical: 6,
                               ),
-                              child: Column(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                        right: 24, bottom: 4),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        CircleAvatar(
-                                          radius: 36,
-                                          backgroundImage:
-                                              networkImage(user.photoUrl),
-                                        ),
-                                        _tap(
-                                          value: posts.length,
-                                          name: '게시물',
-                                          onTap: () {
-                                            Scrollable.ensureVisible(
-                                              _gridPostsKey.currentContext!,
-                                              duration: const Duration(
-                                                  milliseconds: 250),
-                                            );
-                                          },
-                                        ),
-                                        _tap(
-                                          value: followers.length,
-                                          name: '팔로워',
-                                          onTap: () {
-                                            _showFollows(
-                                              user: user,
-                                              followers: followers,
-                                              following: following,
-                                              showFollows: true,
-                                            );
-                                          },
-                                        ),
-                                        _tap(
-                                          value: following.length,
-                                          name: '팔로잉',
-                                          onTap: () {
-                                            _showFollows(
-                                              user: user,
-                                              followers: followers,
-                                              following: following,
-                                              showFollows: false,
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (user.website != null)
-                                    Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 2,
-                                        vertical: 6,
-                                      ),
-                                      child: Linkify(
-                                        text: user.website ?? '',
-                                        onOpen: (link) async {
-                                          if (await canLaunch(link.url)) {
-                                            await launch(link.url);
-                                          } else {
-                                            showSnackbar(context,
-                                                'Cannot launch ' + link.url);
-                                          }
+                              child: Linkify(
+                                text: user.website ?? '',
+                                onOpen: (link) async {
+                                  if (await canLaunch(link.url)) {
+                                    await launch(link.url);
+                                  } else {
+                                    showSnackbar(
+                                        context, 'Cannot launch ' + link.url);
+                                  }
+                                },
+                              ),
+                            ),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 2,
+                              vertical: 6,
+                            ),
+                            child: Text(user.state ?? ''),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: IndexedStack(
+                              index: isOnwer ? 0 : 1,
+                              children: [
+                                _button(
+                                  text: '프로필 편집',
+                                  onTap: () {
+                                    _editProfile(user);
+                                  },
+                                ),
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: _button(
+                                        text: isFollower
+                                            ? '팔로잉'
+                                            : isFollowing
+                                                ? '맞-팔로우'
+                                                : '팔로우',
+                                        color: isFollower ? null : Colors.blue,
+                                        onTap: () {
+                                          _toggleFollows(
+                                            isFollow: isFollower,
+                                            uid: currentUid,
+                                            to: user.uid,
+                                          );
                                         },
                                       ),
                                     ),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 2,
-                                      vertical: 6,
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: _button(
+                                        text: '메시지',
+                                        onTap: () {
+                                          _message(user);
+                                        },
+                                      ),
                                     ),
-                                    child: Text(user.state ?? ''),
-                                  ),
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 8),
-                                    child: IndexedStack(
-                                      index: isOnwer ? 0 : 1,
-                                      children: [
-                                        _button(
-                                          text: '프로필 편집',
-                                          onTap: () {
-                                            _editProfile(user);
-                                          },
-                                        ),
-                                        Row(
-                                          children: [
-                                            Flexible(
-                                              child: _button(
-                                                text: isFollower
-                                                    ? '팔로잉'
-                                                    : isFollowing
-                                                        ? '맞-팔로우'
-                                                        : '팔로우',
-                                                color: isFollower
-                                                    ? null
-                                                    : Colors.blue,
-                                                onTap: () {
-                                                  _toggleFollows(
-                                                    isFollow: isFollower,
-                                                    uid: currentUser.uid,
-                                                    to: user.uid,
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Flexible(
-                                              child: _button(
-                                                text: '메시지',
-                                                onTap: () {
-                                                  _message(user, currentUser);
-                                                },
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SliverToBoxAdapter(
-                            child: TabBar(
-                              tabs: [
-                                Tab(icon: Icon(Icons.grid_view_outlined)),
-                                Tab(icon: Icon(Icons.portrait_outlined)),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
                         ],
-                        body: TabBarView(
-                          key: _gridPostsKey,
-                          children: [
-                            _gridTab(user, posts),
-                            _portraitTab(),
-                          ],
-                        ),
                       ),
-                    );
-                  }),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: TabBar(
+                      tabs: [
+                        Tab(icon: Icon(Icons.grid_view_outlined)),
+                        Tab(icon: Icon(Icons.portrait_outlined)),
+                      ],
+                    ),
+                  ),
+                ],
+                body: TabBarView(
+                  key: _gridPostsKey,
+                  children: [
+                    _gridTab(user, posts),
+                    _portraitTab(),
+                  ],
+                ),
+              ),
             );
-          },
-        );
-      },
+          }),
     );
   }
 
@@ -351,21 +344,33 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _editProfile(User user) {
-    Navigator.push(
+  void _editProfile(User user) async {
+    final value = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditProfilePage(user: user),
       ),
-    );
+    ) as User?;
+    if (value != null) {
+      setState(() {
+        user = value;
+      });
+    }
   }
 
   void _toggleFollows({
     required bool isFollow,
     required String uid,
     required String to,
-  }) {
-    _firestore.users.follow(uid: uid, to: to, follow: !isFollow);
+  }) async {
+    await _firestore.users.follow(uid: uid, to: to, follow: !isFollow);
+    setState(() {
+      if (isFollow) {
+        followers.removeWhere((element) => element == uid);
+      } else {
+        followers.add(uid);
+      }
+    });
   }
 
   void _signOut() async {
@@ -377,8 +382,8 @@ class _ProfilePageState extends State<ProfilePage> {
     required List<String> followers,
     required List<String> following,
     required bool showFollows,
-  }) {
-    Navigator.push(
+  }) async {
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => FollowPage(
@@ -389,9 +394,11 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
     );
+    _refresh();
   }
 
-  void _message(User user, User currentUser) async {
+  void _message(User user) async {
+    final currentUser = await _firestore.users.getCurrentUser();
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(

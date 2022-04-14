@@ -3,7 +3,6 @@ import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/pages/message_page.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
-import 'package:instagram/src/widgets/get_user.dart';
 import 'package:instagram/src/widgets/user_list_tile.dart';
 import 'package:provider/provider.dart';
 
@@ -20,9 +19,34 @@ class NewMessagePage extends StatefulWidget {
 
 class _NewMessagePageState extends State<NewMessagePage> {
   late final _firestore = context.read<FirestoreMethods>();
-  late final selected = <String>{};
+  final selected = <String>{};
   bool ownership = false;
   final title = TextEditingController();
+  User? user;
+  List<User>? friends;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final bi = widget.currentUser.following.toSet();
+    bi.retainAll(widget.currentUser.followers);
+    bi.remove(widget.currentUser.uid);
+
+    final friends = <User>[];
+    for (final friend in bi) {
+      final user = await _firestore.users.once(uid: friend);
+      if (user != null) {
+        friends.add(user);
+      }
+    }
+    setState(() {
+      this.friends = friends;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,35 +77,25 @@ class _NewMessagePageState extends State<NewMessagePage> {
                 itemCount: friends.length,
                 itemBuilder: (context, index) {
                   final uid = friends[index];
-                  return GetUser(
-                    uid: uid,
-                    builder: (context, o) {
-                      if (o == null) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      }
-                      return StatefulBuilder(
-                        builder: (context, setStateRow) {
-                          final value = selected.contains(uid);
-                          return UserListTile(
-                            user: o,
-                            trailing: IgnorePointer(
-                              child: Checkbox(
-                                value: value,
-                                onChanged: (v) {},
-                              ),
-                            ),
-                            onTap: () {
-                              setStateRow(() {
-                                if (value) {
-                                  selected.remove(uid);
-                                } else {
-                                  selected.add(uid);
-                                }
-                              });
-                            },
-                          );
+                  return StatefulBuilder(
+                    builder: (context, setStateRow) {
+                      final value = selected.contains(uid);
+                      return UserListTile(
+                        user: currentUser,
+                        trailing: IgnorePointer(
+                          child: Checkbox(
+                            value: value,
+                            onChanged: (v) {},
+                          ),
+                        ),
+                        onTap: () {
+                          setStateRow(() {
+                            if (value) {
+                              selected.remove(uid);
+                            } else {
+                              selected.add(uid);
+                            }
+                          });
                         },
                       );
                     },
