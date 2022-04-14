@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:instagram/src/models/chat_user.dart';
 
 class Chat {
   final String chatId;
-  final Map<String, ChatUser> members;
+  final List<String> users;
   final bool group;
   final String? title;
   final String? owner;
@@ -13,7 +12,7 @@ class Chat {
 
   const Chat({
     required this.chatId,
-    required this.members,
+    required this.users,
     required this.group,
     required this.title,
     required this.owner,
@@ -24,7 +23,7 @@ class Chat {
 
   Map<String, dynamic> toJson() => {
         'chatId': chatId,
-        'members': members.map((key, value) => MapEntry(key, value.toJson())),
+        'users': users,
         'group': group,
         'title': title,
         'owner': owner,
@@ -35,11 +34,9 @@ class Chat {
 
   static Chat fromSnapshot(DocumentSnapshot snapshot) {
     final data = snapshot.data() as Map<String, dynamic>;
-    final members = data['members']
-        .map((key, json) => MapEntry(key, ChatUser.fromJson(json)));
     return Chat(
       chatId: data['chatId'],
-      members: Map.castFrom(members),
+      users: List.castFrom(data['users']),
       group: data['group'],
       title: data['title'],
       owner: data['owner'],

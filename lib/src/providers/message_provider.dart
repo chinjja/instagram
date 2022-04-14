@@ -37,7 +37,7 @@ class MessageProvider {
       chatId: chatId,
       uid: uid,
       text: text,
-      datePublished: Timestamp.now(),
+      date: Timestamp.now(),
     );
     final data = serverTimestamp(message.toJson());
     log('create message: $messageId');

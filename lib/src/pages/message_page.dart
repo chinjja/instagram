@@ -37,7 +37,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
   late final _firestore = context.read<FirestoreMethods>();
   late final Timestamp timestamp;
   late Chat? chat = widget.chat;
-  StreamSubscription? subscription;
+  final subscription = CompositeSubscription();
   Map<String, User> userMap = {};
   List<User> userList = [];
 
@@ -64,7 +64,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance?.removeObserver(this);
-    subscription?.cancel();
+    subscription.cancel();
     checkMessage();
     super.dispose();
   }
@@ -78,32 +78,39 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
 
   Future<void> initChat(Chat chat) async {
     timestamp = Timestamp.now();
-    subscription?.cancel();
-    subscription = _firestore.messages
-        .listenLasts(chatId: chat.chatId, timestamp: timestamp);
+    subscription.add(_firestore.messages
+        .listenLasts(chatId: chat.chatId, timestamp: timestamp));
 
-    for (final uid in chat.members.keys.toList()) {
+    final map = <String, User>{};
+    final list = <User>[];
+    for (final uid in chat.users) {
       final user = await _firestore.users.once(uid: uid);
       if (user != null) {
-        userMap[uid] = user;
-        userList.add(user);
+        map[uid] = user;
+        list.add(user);
       }
     }
+    setState(() {
+      userMap = map;
+      userList = list;
+    });
   }
 
   void checkMessage() {
     if (chat != null) {
-      _firestore.chats.checkMessage(chat: chat!, uid: widget.currentUser.uid);
+      _firestore.chats.updateUserTimestamp(
+        chat: chat!,
+        uid: widget.currentUser.uid,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final members = chat?.members.keys.toList();
     return Scaffold(
       appBar: AppBar(
         leading: const BackButton(),
-        title: _title(members),
+        title: _title(),
       ),
       body: SafeArea(
         child: Column(
@@ -131,7 +138,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
     return Column(
       children: [
         ListTile(
-          title: Text('참여자: ${userMap.length}'),
+          title: Text('참여자: ${userList.length}'),
           subtitle: Text(
               '개설일: ${chat == null ? '' : DateFormat.yMd().format(chat!.datePublished.toDate())}'),
         ),
@@ -153,7 +160,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
     );
   }
 
-  Widget? _title(List<String>? members) {
+  Widget? _title() {
     if (widget.group) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -161,13 +168,13 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
           Text(chat?.title ?? '그룹채팅'),
           const SizedBox(width: 8),
           Text(
-            '${members?.length ?? 0}',
+            '${userList.length}',
             style: const TextStyle(color: Colors.grey),
           ),
         ],
       );
     } else {
-      final users = members == null ? widget.others : members.toList();
+      final users = userList.isEmpty ? widget.others : userList;
       final uid = oppositeItem(users, widget.currentUser.uid);
       if (uid == null) {
         return null;
