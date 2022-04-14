@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:instagram/src/pages/chat_page.dart';
 import 'package:instagram/src/pages/nav_page.dart';
 import 'package:instagram/src/widgets/get_user.dart';
+import 'package:instagram/src/widgets/keep_alive_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -30,20 +31,22 @@ class _HomePageState extends State<HomePage> {
           physics: tab == 0 ? null : const NeverScrollableScrollPhysics(),
           controller: chatController,
           children: [
-            NavPage(
-              user: currentUser,
-              onShowChat: () {
-                chatController.animateToPage(
-                  1,
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.ease,
-                );
-              },
-              onTabChanged: (value) {
-                setState(() {
-                  tab = value;
-                });
-              },
+            KeepAliveWidget(
+              child: NavPage(
+                user: currentUser,
+                onShowChat: () {
+                  chatController.animateToPage(
+                    1,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.ease,
+                  );
+                },
+                onTabChanged: (value) {
+                  setState(() {
+                    tab = value;
+                  });
+                },
+              ),
             ),
             ChatPage(
               user: currentUser,

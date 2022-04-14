@@ -6,6 +6,7 @@ import 'package:instagram/src/pages/bookmark_page.dart';
 import 'package:instagram/src/pages/feed_page.dart';
 import 'package:instagram/src/pages/profile_page.dart';
 import 'package:instagram/src/pages/search_page.dart';
+import 'package:instagram/src/widgets/keep_alive_widget.dart';
 
 class NavPage extends StatefulWidget {
   const NavPage({
@@ -36,23 +37,31 @@ class _NavPageState extends State<NavPage> {
         physics: const NeverScrollableScrollPhysics(),
         controller: tabController,
         children: [
-          PageStorage(
-            key: pageKey,
-            bucket: pageBucket,
-            child: FeedPage(
-              currentUser: user,
-              onShowChat: widget.onShowChat,
+          KeepAliveWidget(
+            child: PageStorage(
+              key: pageKey,
+              bucket: pageBucket,
+              child: FeedPage(
+                currentUser: user,
+                onShowChat: widget.onShowChat,
+              ),
             ),
           ),
-          const SearchPage(),
-          ActivityPage(
-            currentUser: user,
+          const KeepAliveWidget(child: SearchPage()),
+          KeepAliveWidget(
+            child: ActivityPage(
+              currentUser: user,
+            ),
           ),
-          BookmarkPage(
-            currentUser: user,
+          KeepAliveWidget(
+            child: BookmarkPage(
+              currentUser: user,
+            ),
           ),
-          ProfilePage(
-            user: user,
+          KeepAliveWidget(
+            child: ProfilePage(
+              user: user,
+            ),
           ),
         ],
       ),
