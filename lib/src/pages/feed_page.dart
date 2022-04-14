@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
@@ -55,6 +56,11 @@ class _FeedPageState extends State<FeedPage> {
       appBar: AppBar(
         title: const Text('Instagram'),
         actions: [
+          if (kIsWeb)
+            IconButton(
+              onPressed: _refresh,
+              icon: const Icon(Icons.refresh),
+            ),
           IconButton(
             onPressed: posts == null ? null : _addPost,
             icon: const Icon(Icons.add_outlined),

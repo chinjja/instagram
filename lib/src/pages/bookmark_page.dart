@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/bookmark.dart';
 import 'package:instagram/src/models/user.dart';
@@ -41,7 +42,13 @@ class _BookmarkPageState extends State<BookmarkPage> {
   Widget build(BuildContext context) {
     final currentUser = widget.currentUser;
     return Scaffold(
-      appBar: AppBar(title: const Text('저장됨')),
+      appBar: AppBar(
+        title: const Text('저장됨'),
+        actions: [
+          if (kIsWeb)
+            IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh)),
+        ],
+      ),
       body: SafeArea(
         child: bookmarks == null
             ? const Center(child: CircularProgressIndicator())

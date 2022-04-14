@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/activity.dart';
 import 'package:instagram/src/models/user.dart';
@@ -38,7 +39,13 @@ class _ActivityPageState extends State<ActivityPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('활동')),
+      appBar: AppBar(
+        title: const Text('활동'),
+        actions: [
+          if (kIsWeb)
+            IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh)),
+        ],
+      ),
       body: SafeArea(
         child: activities == null
             ? const Center(child: CircularProgressIndicator())
