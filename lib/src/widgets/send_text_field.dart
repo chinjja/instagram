@@ -60,25 +60,24 @@ class _SendTextFieldState extends State<SendTextField> {
             ),
           ),
           Positioned(
-            left: 0,
-            bottom: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(4.0),
-              child: CircleAvatar(
-                radius: 20,
-                backgroundImage: networkImage(user.photoUrl),
-              ),
-            ),
-          ),
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: TextButton(
-              child: Text(widget.sendText),
-              onPressed:
-                  controller.text.trim().isEmpty ? null : () => _summit(),
-            ),
-          ),
+              top: 0,
+              left: 2,
+              right: 6,
+              bottom: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundImage: networkImage(user.photoUrl),
+                  ),
+                  TextButton(
+                    child: Text(widget.sendText),
+                    onPressed:
+                        controller.text.trim().isEmpty ? null : () => _summit(),
+                  ),
+                ],
+              )),
         ],
       ),
     );
