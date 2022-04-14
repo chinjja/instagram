@@ -10,13 +10,11 @@ import 'package:instagram/src/providers/chat_provider.dart';
 import 'package:instagram/src/providers/comment_provider.dart';
 import 'package:instagram/src/providers/like_provider.dart';
 import 'package:instagram/src/providers/message_provider.dart';
-import 'package:instagram/src/providers/my_post_provider.dart';
 import 'package:instagram/src/providers/post_provider.dart';
 import 'package:instagram/src/providers/user_provider.dart';
 import 'package:instagram/src/resources/auth_methods.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/resources/storage_methods.dart';
-import 'package:instagram/src/widgets/current_user.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
@@ -49,30 +47,27 @@ void main() async {
 }
 
 final _storage = StorageMethods();
-final _commentProvider = CommentProvider(storage: _storage);
+final _commentProvider = CommentProvider();
 final _messages = MessageProvider(storage: _storage);
-final _likeProvider = LikeProvider(storage: _storage);
-final _activityProvider = ActivityProvider(storage: _storage);
-final _userProvider = UserProvider(
-  storage: _storage,
-  activityProvider: _activityProvider,
-  bookmarkProvider: BookmarkProvider(storage: _storage),
-  myPostProvider: MyPostProvider(storage: _storage),
-);
+final _userProvider = UserProvider(storage: _storage);
+final _bookmarkProvider = BookmarkProvider();
+final _likeProvider = LikeProvider();
+final _activityProvider = ActivityProvider();
 final _firestore = FirestoreMethods(
   users: _userProvider,
   posts: PostProvider(
     storage: _storage,
-    commentProvider: _commentProvider,
-    likeProvider: _likeProvider,
-    activityProvider: _activityProvider,
-    userProvider: _userProvider,
+    comments: _commentProvider,
+    likes: _likeProvider,
+    activities: _activityProvider,
+    bookmarks: _bookmarkProvider,
   ),
-  likes: LikeProvider(storage: _storage),
+  likes: _likeProvider,
   comments: _commentProvider,
-  activities: ActivityProvider(storage: _storage),
+  activities: _activityProvider,
   chats: ChatProvider(storage: _storage, messages: _messages),
   messages: _messages,
+  bookmarks: _bookmarkProvider,
 );
 final _auth = AuthMethods(firestore: _firestore);
 

@@ -4,7 +4,7 @@ class Post {
   final String description;
   final String uid;
   final String postId;
-  final Timestamp? datePublished;
+  final Timestamp? date;
   final String postUrl;
   final double aspectRatio;
 
@@ -12,7 +12,7 @@ class Post {
     required this.description,
     required this.uid,
     required this.postId,
-    required this.datePublished,
+    required this.date,
     required this.postUrl,
     required this.aspectRatio,
   });
@@ -21,20 +21,19 @@ class Post {
         'uid': uid,
         'description': description,
         'postId': postId,
-        'datePublished': datePublished,
+        'date': date,
         'postUrl': postUrl,
         'aspectRatio': aspectRatio,
       };
 
-  static Post fromSnapshot(DocumentSnapshot snapshot) {
-    final data = snapshot.data() as Map<String, dynamic>;
+  static Post fromJson(Map<String, dynamic> json) {
     return Post(
-      uid: data['uid'],
-      description: data['description'],
-      postId: data['postId'],
-      datePublished: data['datePublished'],
-      postUrl: data['postUrl'],
-      aspectRatio: (data['aspectRatio'] as num).toDouble(),
+      uid: json['uid'],
+      description: json['description'],
+      postId: json['postId'],
+      date: json['date'],
+      postUrl: json['postUrl'],
+      aspectRatio: (json['aspectRatio'] as num).toDouble(),
     );
   }
 }

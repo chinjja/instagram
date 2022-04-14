@@ -1,52 +1,70 @@
 import 'dart:developer';
+import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:instagram/src/models/like.dart';
-import 'package:instagram/src/models/likes.dart';
-import 'package:instagram/src/resources/storage_methods.dart';
-import 'package:rxdart/rxdart.dart';
 
 class LikeProvider {
-  LikeProvider({required this.storage});
+  static const maxDistribution = 5;
   final _firestore = FirebaseFirestore.instance;
-  final StorageMethods storage;
 
-  void create(WriteBatch batch, String id) {
-    log('create like: $id');
-    batch.set(_firestore.collection('likes').doc(id),
-        Likes(id: id, likes: {}).toJson());
+  Future<int> getCount({
+    required String postId,
+  }) async {
+    final snapshot = await _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('likeCount')
+        .get();
+    int count = 0;
+    for (final doc in snapshot.docs) {
+      count += doc['count'] as int;
+    }
+    return count;
   }
 
-  void delete(WriteBatch batch, String id) {
-    log('delete like: $id');
-    batch.delete(_firestore.collection('likes').doc(id));
-  }
-
-  Stream<Likes> at({required String id}) {
-    return _firestore
+  Future<bool> exists({
+    required String uid,
+    required String postId,
+  }) async {
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(uid)
         .collection('likes')
-        .doc(id)
-        .snapshots()
-        .where((doc) => doc.data() != null)
-        .map((doc) => Likes.fromSnapshot(doc))
-        .doOnError((_, e) => log(e.toString()));
+        .doc(postId)
+        .get();
+    return snapshot.exists;
   }
 
-  Future<void> like(
-      {required String id, required String uid, required String to}) async {
-    final data =
-        Like(uid: uid, to: to, datePublished: Timestamp.now()).toJson();
-    data['datePublished'] = FieldValue.serverTimestamp();
-    log('like: $id');
-    await _firestore.collection('likes').doc(id).update({
-      'likes.$uid': data,
-    });
-  }
-
-  Future<void> unlike({required String id, required String uid}) async {
-    log('unlike: $id');
-    await _firestore.collection('likes').doc(id).update({
-      'likes.$uid': FieldValue.delete(),
-    });
+  void set(
+    WriteBatch batch, {
+    required String uid,
+    required String postId,
+    required bool value,
+    bool ignoreCount = false,
+  }) {
+    final like =
+        _firestore.collection('users').doc(uid).collection('likes').doc(postId);
+    final count = _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('likeCount')
+        .doc(math.Random().nextInt(maxDistribution).toString());
+    if (value) {
+      batch.set(like, {
+        'postId': postId,
+      });
+      batch.set(
+          count, {'count': FieldValue.increment(1)}, SetOptions(merge: true));
+    } else {
+      batch.delete(like);
+      if (!ignoreCount) {
+        batch.set(
+          count,
+          {'count': FieldValue.increment(-1)},
+          SetOptions(merge: true),
+        );
+      }
+    }
+    log('like: $value $uid');
   }
 }

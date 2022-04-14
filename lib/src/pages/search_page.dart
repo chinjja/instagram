@@ -15,6 +15,24 @@ class _SearchPageState extends State<SearchPage> {
   late final _firestore = context.read<FirestoreMethods>();
   final _searchController = TextEditingController();
 
+  List<User> users = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final list = await _firestore.users.search(
+      username: _searchController.text,
+      limit: 10,
+    );
+    setState(() {
+      users = list;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,29 +48,15 @@ class _SearchPageState extends State<SearchPage> {
           ),
         ),
       ),
-      body: StreamBuilder<List<User>>(
-        stream: _firestore.users.search(
-          username: _searchController.text,
-          limit: 10,
-        ),
-        builder: (context, snapshot) {
-          final users = snapshot.data;
-          if (users == null) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-          return ListView.builder(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            itemCount: users.length,
-            itemBuilder: (context, index) {
-              final user = users[index];
-              return UserListTile(
-                key: ValueKey(user.uid),
-                user: user,
-              );
-            },
+      body: ListView.builder(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        itemCount: users.length,
+        itemBuilder: (context, index) {
+          final user = users[index];
+          return UserListTile(
+            key: ValueKey(user.uid),
+            user: user,
           );
         },
       ),

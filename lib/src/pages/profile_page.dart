@@ -1,8 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
-import 'package:instagram/src/models/bookmarks.dart';
-import 'package:instagram/src/models/my_post.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/pages/edit_profile_page.dart';
@@ -37,223 +35,212 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final user1 = widget.user;
-    final bookmarkStream = _firestore.users.bookmarks(uid: user1.uid);
-    final postStream = _firestore.users.posts(uid: user1.uid);
-    return StreamBuilder<Bookmarks>(
-        stream: bookmarkStream,
-        builder: (context, snapshot) {
-          final bookmarks = snapshot.data;
-          return GetUser(
-            uid: user1.uid,
-            builder: (context, snapshot) {
-              final user = snapshot ?? user1;
-              return CurrentUser(
-                builder: (context, currentUser) {
-                  if (currentUser == null) {
-                    return const SizedBox.shrink();
-                  }
+    final postStream = _firestore.posts.list(uid: user1.uid, limit: 10);
+    return GetUser(
+      uid: user1.uid,
+      builder: (context, snapshot) {
+        final user = snapshot ?? user1;
+        return CurrentUser(
+          builder: (context, currentUser) {
+            if (currentUser == null) {
+              return const SizedBox.shrink();
+            }
 
-                  final followers = user.followers;
-                  final following = user.following;
-                  final isOnwer = user.uid == currentUser.uid;
-                  final isFollower = followers.contains(currentUser.uid);
-                  final isFollowing = following.contains(currentUser.uid);
+            final followers = user.followers;
+            final following = user.following;
+            final isOnwer = user.uid == currentUser.uid;
+            final isFollower = followers.contains(currentUser.uid);
+            final isFollowing = following.contains(currentUser.uid);
 
-                  return Scaffold(
-                    appBar: AppBar(
-                      title: Text(user.username),
-                      actions: isOnwer
-                          ? [
-                              TextButton(
-                                onPressed: _signOut,
-                                child: const Text('Sign Out'),
+            return Scaffold(
+              appBar: AppBar(
+                title: Text(user.username),
+                actions: isOnwer
+                    ? [
+                        TextButton(
+                          onPressed: _signOut,
+                          child: const Text('Sign Out'),
+                        ),
+                      ]
+                    : null,
+              ),
+              body: FutureBuilder<List<Post>>(
+                  future: postStream,
+                  builder: (context, snapshot) {
+                    final posts = snapshot.data;
+                    if (posts == null) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+                    return DefaultTabController(
+                      length: 2,
+                      child: NestedScrollView(
+                        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                top: 16,
+                                left: 16,
+                                right: 16,
                               ),
-                            ]
-                          : null,
-                    ),
-                    body: StreamBuilder<MyPosts>(
-                      stream: postStream,
-                      builder: (context, snapshot) {
-                        final posts = snapshot.data?.posts.values.toList();
-                        if (posts == null) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        return DefaultTabController(
-                          length: 2,
-                          child: NestedScrollView(
-                            headerSliverBuilder:
-                                (context, innerBoxIsScrolled) => [
-                              SliverToBoxAdapter(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: 16,
-                                    left: 16,
-                                    right: 16,
+                              child: Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                        right: 24, bottom: 4),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 36,
+                                          backgroundImage:
+                                              networkImage(user.photoUrl),
+                                        ),
+                                        _tap(
+                                          value: posts.length,
+                                          name: '게시물',
+                                          onTap: () {
+                                            Scrollable.ensureVisible(
+                                              _gridPostsKey.currentContext!,
+                                              duration: const Duration(
+                                                  milliseconds: 250),
+                                            );
+                                          },
+                                        ),
+                                        _tap(
+                                          value: followers.length,
+                                          name: '팔로워',
+                                          onTap: () {
+                                            _showFollows(
+                                              user: user,
+                                              followers: followers,
+                                              following: following,
+                                              showFollows: true,
+                                            );
+                                          },
+                                        ),
+                                        _tap(
+                                          value: following.length,
+                                          name: '팔로잉',
+                                          onTap: () {
+                                            _showFollows(
+                                              user: user,
+                                              followers: followers,
+                                              following: following,
+                                              showFollows: false,
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  child: Column(
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                            right: 24, bottom: 4),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
+                                  if (user.website != null)
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 2,
+                                        vertical: 6,
+                                      ),
+                                      child: Linkify(
+                                        text: user.website ?? '',
+                                        onOpen: (link) async {
+                                          if (await canLaunch(link.url)) {
+                                            await launch(link.url);
+                                          } else {
+                                            showSnackbar(context,
+                                                'Cannot launch ' + link.url);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 2,
+                                      vertical: 6,
+                                    ),
+                                    child: Text(user.state ?? ''),
+                                  ),
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 8),
+                                    child: IndexedStack(
+                                      index: isOnwer ? 0 : 1,
+                                      children: [
+                                        _button(
+                                          text: '프로필 편집',
+                                          onTap: () {
+                                            _editProfile(user);
+                                          },
+                                        ),
+                                        Row(
                                           children: [
-                                            CircleAvatar(
-                                              radius: 36,
-                                              backgroundImage:
-                                                  networkImage(user.photoUrl),
+                                            Flexible(
+                                              child: _button(
+                                                text: isFollower
+                                                    ? '팔로잉'
+                                                    : isFollowing
+                                                        ? '맞-팔로우'
+                                                        : '팔로우',
+                                                color: isFollower
+                                                    ? null
+                                                    : Colors.blue,
+                                                onTap: () {
+                                                  _toggleFollows(
+                                                    isFollow: isFollower,
+                                                    uid: currentUser.uid,
+                                                    to: user.uid,
+                                                  );
+                                                },
+                                              ),
                                             ),
-                                            _tap(
-                                              value: posts.length,
-                                              name: '게시물',
-                                              onTap: () {
-                                                Scrollable.ensureVisible(
-                                                  _gridPostsKey.currentContext!,
-                                                  duration: const Duration(
-                                                      milliseconds: 250),
-                                                );
-                                              },
-                                            ),
-                                            _tap(
-                                              value: followers.length,
-                                              name: '팔로워',
-                                              onTap: () {
-                                                _showFollows(
-                                                  user: user,
-                                                  followers: followers,
-                                                  following: following,
-                                                  showFollows: true,
-                                                );
-                                              },
-                                            ),
-                                            _tap(
-                                              value: following.length,
-                                              name: '팔로잉',
-                                              onTap: () {
-                                                _showFollows(
-                                                  user: user,
-                                                  followers: followers,
-                                                  following: following,
-                                                  showFollows: false,
-                                                );
-                                              },
+                                            const SizedBox(width: 8),
+                                            Flexible(
+                                              child: _button(
+                                                text: '메시지',
+                                                onTap: () {
+                                                  _message(user, currentUser);
+                                                },
+                                              ),
                                             ),
                                           ],
                                         ),
-                                      ),
-                                      if (user.website != null)
-                                        Container(
-                                          width: double.infinity,
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 2,
-                                            vertical: 6,
-                                          ),
-                                          child: Linkify(
-                                            text: user.website ?? '',
-                                            onOpen: (link) async {
-                                              if (await canLaunch(link.url)) {
-                                                await launch(link.url);
-                                              } else {
-                                                showSnackbar(
-                                                    context,
-                                                    'Cannot launch ' +
-                                                        link.url);
-                                              }
-                                            },
-                                          ),
-                                        ),
-                                      Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 2,
-                                          vertical: 6,
-                                        ),
-                                        child: Text(user.state ?? ''),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 8),
-                                        child: IndexedStack(
-                                          index: isOnwer ? 0 : 1,
-                                          children: [
-                                            _button(
-                                              text: '프로필 편집',
-                                              onTap: () {
-                                                _editProfile(user);
-                                              },
-                                            ),
-                                            Row(
-                                              children: [
-                                                Flexible(
-                                                  child: _button(
-                                                    text: isFollower
-                                                        ? '팔로잉'
-                                                        : isFollowing
-                                                            ? '맞-팔로우'
-                                                            : '팔로우',
-                                                    color: isFollower
-                                                        ? null
-                                                        : Colors.blue,
-                                                    onTap: () {
-                                                      _toggleFollows(
-                                                        isFollow: isFollower,
-                                                        uid: currentUser.uid,
-                                                        to: user.uid,
-                                                      );
-                                                    },
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Flexible(
-                                                  child: _button(
-                                                    text: '메시지',
-                                                    onTap: () {
-                                                      _message(
-                                                          user, currentUser);
-                                                    },
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
-                              const SliverToBoxAdapter(
-                                child: TabBar(
-                                  tabs: [
-                                    Tab(icon: Icon(Icons.grid_view_outlined)),
-                                    Tab(icon: Icon(Icons.portrait_outlined)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            body: TabBarView(
-                              key: _gridPostsKey,
-                              children: [
-                                _gridTab(user, posts, bookmarks),
-                                _portraitTab(),
+                            ),
+                          ),
+                          const SliverToBoxAdapter(
+                            child: TabBar(
+                              tabs: [
+                                Tab(icon: Icon(Icons.grid_view_outlined)),
+                                Tab(icon: Icon(Icons.portrait_outlined)),
                               ],
                             ),
                           ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              );
-            },
-          );
-        });
+                        ],
+                        body: TabBarView(
+                          key: _gridPostsKey,
+                          children: [
+                            _gridTab(user, posts),
+                            _portraitTab(),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+            );
+          },
+        );
+      },
+    );
   }
 
-  Widget _gridTab(User user, List<MyPost> posts, Bookmarks? bookmarks) {
+  Widget _gridTab(User user, List<Post> posts) {
     if (posts.isEmpty) {
       return const Align(
         alignment: Alignment.topCenter,
@@ -278,7 +265,6 @@ class _ProfilePageState extends State<ProfilePage> {
           child: GestureDetector(
             onTap: () {
               _feed(
-                bookmarks,
                 user,
               );
             },
@@ -310,24 +296,18 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _feed(Bookmarks? bookmarks, User user) async {
-    if (bookmarks == null) return;
-
+  void _feed(User user) async {
+    final posts = await _firestore.posts.list(
+      uid: user.uid,
+      start: Timestamp.now(),
+      limit: 15,
+    );
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => StreamBuilder<List<Post>>(
-          stream: _firestore.posts.all(
-            uid: user.uid,
-            start: Timestamp.now(),
-          ),
-          builder: (context, snapshot) {
-            return PostListPage(
-              user: user,
-              posts: snapshot.data,
-              bookmarks: bookmarks,
-            );
-          },
+        builder: (context) => PostListPage(
+          user: user,
+          posts: posts,
         ),
       ),
     );

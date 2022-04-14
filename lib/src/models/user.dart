@@ -40,17 +40,16 @@ class User {
         'followers': followers,
       };
 
-  static User fromSnapshot(DocumentSnapshot snapshot) {
-    final data = snapshot.data() as Map<String, dynamic>;
+  static User fromJson(Map<String, dynamic> json) {
     return User(
-      username: data['username'],
-      state: data['state'],
-      website: data['website'],
-      uid: data['uid'],
-      email: data['email'],
-      photoUrl: data['photoUrl'],
-      following: List.castFrom(data['following'] ?? []),
-      followers: List.castFrom(data['followers'] ?? []),
+      username: json['username'],
+      state: json['state'],
+      website: json['website'],
+      uid: json['uid'],
+      email: json['email'],
+      photoUrl: json['photoUrl'],
+      following: List.castFrom(json['following'] ?? []),
+      followers: List.castFrom(json['followers'] ?? []),
     );
   }
 }

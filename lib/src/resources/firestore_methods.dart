@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:instagram/src/providers/activity_provider.dart';
+import 'package:instagram/src/providers/bookmark_provider.dart';
 import 'package:instagram/src/providers/chat_provider.dart';
 import 'package:instagram/src/providers/comment_provider.dart';
 import 'package:instagram/src/providers/like_provider.dart';
@@ -19,6 +20,7 @@ class FirestoreMethods {
     required this.activities,
     required this.chats,
     required this.messages,
+    required this.bookmarks,
   });
   final UserProvider users;
   final PostProvider posts;
@@ -27,6 +29,7 @@ class FirestoreMethods {
   final ActivityProvider activities;
   final ChatProvider chats;
   final MessageProvider messages;
+  final BookmarkProvider bookmarks;
 
   static Stream<List<R>> buffer<T, R>(
     List<T> list,
@@ -49,7 +52,7 @@ class FirestoreMethods {
     });
   }
 
-  static void deleteCollection(
+  static Future<void> deleteCollection(
       WriteBatch batch, DocumentReference ref, String id) async {
     final collectionRef = ref.collection(id);
     final snapshot = await collectionRef.get();

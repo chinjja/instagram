@@ -85,6 +85,7 @@ class _AddPostPageState extends State<AddPostPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
+                    autofocus: true,
                     controller: _description,
                     maxLength: 1000,
                     minLines: 3,
@@ -128,13 +129,13 @@ class _AddPostPageState extends State<AddPostPage> {
     setState(() {
       _uploading = true;
     });
-    await _firestore.posts.create(
+    final post = await _firestore.posts.add(
       description: _description.text,
       file: _image!,
       uid: widget.user.uid,
     );
 
-    Navigator.pop(context);
+    Navigator.pop(context, post);
     showSnackbar(context, 'Done!');
   }
 }

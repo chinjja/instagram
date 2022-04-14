@@ -4,7 +4,6 @@ import 'package:instagram/src/pages/message_page.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
 import 'package:instagram/src/widgets/get_user.dart';
-import 'package:instagram/src/widgets/get_user_list.dart';
 import 'package:instagram/src/widgets/user_list_tile.dart';
 import 'package:provider/provider.dart';
 

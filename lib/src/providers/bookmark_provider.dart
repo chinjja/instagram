@@ -2,55 +2,54 @@ import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:instagram/src/models/bookmark.dart';
-import 'package:instagram/src/models/bookmarks.dart';
-import 'package:instagram/src/resources/storage_methods.dart';
-import 'package:rxdart/rxdart.dart';
 
 class BookmarkProvider {
-  BookmarkProvider({required this.storage});
   final _firestore = FirebaseFirestore.instance;
-  final StorageMethods storage;
 
-  void create(WriteBatch batch, {required String id}) {
-    log('create bookmark: $id');
-    batch.set(_firestore.collection('bookmarks').doc(id),
-        Bookmarks(id: id, posts: {}).toJson());
-  }
-
-  void delete(WriteBatch batch, {required String id}) {
-    log('delete bookmark: $id');
-    batch.delete(_firestore.collection('bookmarks').doc(id));
-  }
-
-  Stream<Bookmarks> at({required String id}) {
-    return _firestore
+  Future<bool> exists({
+    required String uid,
+    required String postId,
+  }) async {
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(uid)
         .collection('bookmarks')
-        .doc(id)
-        .snapshots()
-        .where((doc) => doc.data() != null)
-        .map((doc) => Bookmarks.fromSnapshot(doc))
-        .doOnError((_, e) => log(e.toString()));
+        .doc(postId)
+        .get();
+    return snapshot.exists;
   }
 
-  Future<void> bookmark({
-    required String id,
+  void set(
+    WriteBatch batch, {
+    required String uid,
     required String postId,
-    required String postUrl,
-  }) async {
-    final data = Bookmark(postId: postId, postUrl: postUrl).toJson();
-    log('bookmark: $postId');
-    await _firestore.collection('bookmarks').doc(id).update({
-      'posts.$postId': data,
-    });
+    String? postUrl,
+    required bool value,
+  }) {
+    if (value && postUrl == null) {
+      throw 'require a post url for bookmarking';
+    }
+    final bookmark = _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('bookmarks')
+        .doc(postId);
+    if (value) {
+      final data = Bookmark(postId: postId, postUrl: postUrl!);
+      batch.set(bookmark, data.toJson());
+    } else {
+      batch.delete(bookmark);
+    }
+    log('bookmark: $value $postId');
   }
 
-  Future<void> unbookmark({
-    required String id,
-    required String postId,
-  }) async {
-    log('unbookmark: $id');
-    await _firestore.collection('bookmarks').doc(id).update({
-      'posts.$postId': FieldValue.delete(),
-    });
+  Future<List<Bookmark>> list({required String uid, required int limit}) async {
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('bookmarks')
+        .limit(limit)
+        .get();
+    return snapshot.docs.map((e) => Bookmark.fromJson(e.data())).toList();
   }
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:instagram/src/models/bookmarks.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/widgets/post_card.dart';
@@ -9,10 +8,8 @@ class PostListPage extends StatelessWidget {
     Key? key,
     required this.user,
     required this.posts,
-    required this.bookmarks,
   }) : super(key: key);
   final User user;
-  final Bookmarks bookmarks;
   final List<Post>? posts;
 
   @override
@@ -29,7 +26,6 @@ class PostListPage extends StatelessWidget {
                 final post = posts![index];
                 return PostCard(
                   key: ValueKey(post.postId),
-                  bookmarks: bookmarks,
                   post: post,
                   user: user,
                 );
