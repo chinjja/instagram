@@ -48,13 +48,11 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
     if (!widget.group && chat == null) {
       _firestore.chats
           .findDirectChat(uid: widget.currentUser.uid, to: widget.others!.first)
-          .first
-          .then((value) => initChat(value))
+          .then((value) => initChat(value!))
           .onError((error, stackTrace) {});
     }
     if (chat != null) {
       initChat(chat!);
-      checkMessage();
     }
     WidgetsBinding.instance?.addObserver(this);
   }

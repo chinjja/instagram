@@ -101,18 +101,16 @@ class ChatProvider {
         .defaultIfEmpty(false);
   }
 
-  Stream<Chat> findDirectChat({
+  Future<Chat?> findDirectChat({
     required String uid,
     required String to,
-  }) {
-    return _firestore
+  }) async {
+    final snapshot = await _firestore
         .collection(_chats)
         .where('tag', isEqualTo: _tag([uid, to]))
-        .snapshots()
-        .flatMap((snapshot) => Stream.fromIterable(snapshot.docs)
-            .map((doc) => Chat.fromSnapshot(doc))
-            .first
-            .asStream());
+        .get();
+
+    return snapshot.size == 0 ? null : Chat.fromSnapshot(snapshot.docs[0]);
   }
 
   Stream<List<Chat>> all({required List<String> chatIds}) {
