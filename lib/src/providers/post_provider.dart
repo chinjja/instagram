@@ -28,19 +28,32 @@ class PostProvider {
   final BookmarkProvider bookmarks;
   final ActivityProvider activities;
 
-  Future<List<Post>> all({
+  QueryDocumentSnapshot? lastPost;
+
+  Future<List<Post>> first({
     required int limit,
-    Timestamp? start,
-    Timestamp? end,
   }) async {
     final snapshot = await _firestore
         .collection('posts')
-        .where('date', isLessThanOrEqualTo: start)
-        .where('date', isGreaterThan: end)
         .orderBy('date', descending: true)
         .limit(limit)
         .get();
 
+    lastPost = snapshot.docs.isEmpty ? null : snapshot.docs.last;
+    return snapshot.docs.map((e) => Post.fromJson(e.data())).toList();
+  }
+
+  Future<List<Post>> next({
+    required int limit,
+  }) async {
+    final snapshot = await _firestore
+        .collection('posts')
+        .orderBy('date', descending: true)
+        .startAfterDocument(lastPost!)
+        .limit(limit)
+        .get();
+
+    lastPost = snapshot.docs.isEmpty ? lastPost : snapshot.docs.last;
     return snapshot.docs.map((e) => Post.fromJson(e.data())).toList();
   }
 
