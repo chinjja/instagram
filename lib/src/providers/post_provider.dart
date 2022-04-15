@@ -28,6 +28,22 @@ class PostProvider {
   final BookmarkProvider bookmarks;
   final ActivityProvider activities;
 
+  Future<List<Post>> all({
+    required int limit,
+    Timestamp? start,
+    Timestamp? end,
+  }) async {
+    final snapshot = await _firestore
+        .collection('posts')
+        .where('date', isLessThanOrEqualTo: start)
+        .where('date', isGreaterThan: end)
+        .orderBy('date', descending: true)
+        .limit(limit)
+        .get();
+
+    return snapshot.docs.map((e) => Post.fromJson(e.data())).toList();
+  }
+
   Future<List<Post>> list({
     required String uid,
     required int limit,

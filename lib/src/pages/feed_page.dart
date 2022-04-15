@@ -32,19 +32,9 @@ class _FeedPageState extends State<FeedPage> {
   }
 
   Future<void> _refresh() async {
-    final end = DateTime.now().subtract(const Duration(days: 7));
-    final list = <Post>[];
-    for (final uid in [
-      widget.currentUser.uid,
-      ...widget.currentUser.following
-    ]) {
-      list.addAll(await _firestore.posts.list(
-        uid: uid,
-        limit: 10,
-        end: Timestamp.fromDate(end),
-      ));
-    }
-    list.sort((a, b) => b.date!.compareTo(a.date!));
+    final list = await _firestore.posts.all(
+      limit: 5,
+    );
     setState(() {
       posts = list;
     });
@@ -97,7 +87,7 @@ class _FeedPageState extends State<FeedPage> {
                   ),
                   if (posts!.isEmpty)
                     const Center(
-                      child: Text('게시물이 없습니다. 팔로잉을 하세요.'),
+                      child: Text('게시물이 없습니다.'),
                     )
                 ],
               ),
