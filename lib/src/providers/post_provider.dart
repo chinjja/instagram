@@ -46,6 +46,9 @@ class PostProvider {
   Future<List<Post>> next({
     required int limit,
   }) async {
+    if (lastPost == null) {
+      return first(limit: limit);
+    }
     final snapshot = await _firestore
         .collection('posts')
         .orderBy('date', descending: true)
@@ -103,23 +106,13 @@ class PostProvider {
       description: description,
       uid: uid,
       postId: postId,
-      date: null,
+      date: Timestamp.now(),
       postUrl: photo.url,
       aspectRatio: photo.width / photo.height,
     );
     final data = obj.toJson();
     data['date'] = FieldValue.serverTimestamp();
     batch.set(post, data);
-
-    if (description.isNotEmpty) {
-      comments.add(
-        batch,
-        postId: postId,
-        fromUid: uid,
-        toUid: uid,
-        text: description,
-      );
-    }
 
     log('add post: $postId');
     await batch.commit();
@@ -138,6 +131,7 @@ class PostProvider {
         batch, _firestore.collection('posts').doc(post.postId), 'likeCount');
     await FirestoreMethods.deleteCollection(
         batch, _firestore.collection('posts').doc(post.postId), 'commentCount');
+    await activities.clear(batch, postId: post.postId);
 
     likes.set(batch,
         uid: post.uid, postId: post.postId, value: false, ignoreCount: true);
@@ -155,10 +149,14 @@ class PostProvider {
     final batch = _firestore.batch();
     likes.set(batch, uid: uid, postId: post.postId, value: value);
     if (value) {
-      activities.add(batch, fromUid: uid, toUid: post.uid, type: 'like', data: {
-        'postId': post.postId,
-        'postUrl': post.postUrl,
-      });
+      activities.add(batch,
+          postId: post.postId,
+          fromUid: uid,
+          toUid: post.uid,
+          type: 'like',
+          data: {
+            'postUrl': post.postUrl,
+          });
     }
 
     await batch.commit();
@@ -197,11 +195,14 @@ class PostProvider {
     final batch = _firestore.batch();
     final comment = comments.add(batch,
         postId: post.postId, fromUid: uid, toUid: post.uid, text: text);
-    activities
-        .add(batch, fromUid: uid, toUid: post.uid, type: 'comment', data: {
-      'postId': post.postId,
-      'postUrl': post.postUrl,
-    });
+    activities.add(batch,
+        postId: post.postId,
+        fromUid: uid,
+        toUid: post.uid,
+        type: 'comment',
+        data: {
+          'postUrl': post.postUrl,
+        });
     await batch.commit();
     return comment;
   }

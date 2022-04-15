@@ -17,7 +17,7 @@ class UserProvider {
   final _cache = <String, model.User>{};
 
   Future<model.User> getCurrentUser() async {
-    final user = await once(uid: currentUid);
+    final user = await get(uid: currentUid);
     return user!;
   }
 
@@ -51,13 +51,14 @@ class UserProvider {
             .doOnError((_, e) => log(e.toString())));
   }
 
-  model.User? get({required String uid}) {
-    return _cache[uid];
-  }
-
-  Future<model.User?> once({required String uid}) async {
+  Future<model.User?> get({required String uid}) async {
+    final user = _cache[uid];
+    if (user != null) return user;
     final snapshot = await _firestore.collection('users').doc(uid).get();
-    return snapshot.exists ? model.User.fromJson(snapshot.data()!) : null;
+    if (snapshot.exists) {
+      return _cache[uid] = model.User.fromJson(snapshot.data()!);
+    }
+    return null;
   }
 
   Stream<model.User> at({required String uid}) {

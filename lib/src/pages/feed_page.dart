@@ -22,6 +22,7 @@ class FeedPage extends StatefulWidget {
 }
 
 class _FeedPageState extends State<FeedPage> {
+  static const pageSize = 3;
   late final _firestore = context.read<FirestoreMethods>();
   List<Post>? posts;
   int latestMore = 0;
@@ -34,7 +35,7 @@ class _FeedPageState extends State<FeedPage> {
 
   Future<void> _refresh() async {
     final list = await _firestore.posts.first(
-      limit: 3,
+      limit: pageSize,
     );
     setState(() {
       latestMore = 0;
@@ -73,7 +74,9 @@ class _FeedPageState extends State<FeedPage> {
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     itemCount: posts!.length,
                     itemBuilder: (context, index) {
-                      if (index == posts!.length - 1 && index > latestMore) {
+                      if (index >= pageSize - 1 &&
+                          index == posts!.length - 1 &&
+                          index > latestMore) {
                         latestMore = index;
                         _fetchMore();
                       }
@@ -83,9 +86,15 @@ class _FeedPageState extends State<FeedPage> {
                         post: post,
                         user: widget.currentUser,
                         onDelete: () {
-                          posts?.removeWhere(
+                          final copy = [...posts!];
+                          copy.removeWhere(
                               (element) => element.postId == post.postId);
-                          setState(() {});
+                          setState(() {
+                            if (latestMore > 0) {
+                              latestMore--;
+                            }
+                            posts = copy;
+                          });
                         },
                       );
                     },
@@ -103,7 +112,7 @@ class _FeedPageState extends State<FeedPage> {
 
   void _fetchMore() async {
     final data = await _firestore.posts.next(
-      limit: 3,
+      limit: pageSize,
     );
     if (data.isNotEmpty) {
       final copy = [...posts ?? <Post>[], ...data];

@@ -29,6 +29,43 @@ class CommentProvider {
     return snapshot.docs.map((e) => Comment.fromJson(e.data())).toList();
   }
 
+  QueryDocumentSnapshot? _latestDocument;
+
+  Future<List<Comment>> first({
+    required String postId,
+    required int limit,
+  }) async {
+    final snapshot = await _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .orderBy('date')
+        .limit(limit)
+        .get();
+    _latestDocument = snapshot.size == 0 ? null : snapshot.docs.last;
+    return snapshot.docs.map((e) => Comment.fromJson(e.data())).toList();
+  }
+
+  Future<List<Comment>> next({
+    required String postId,
+    required int limit,
+  }) async {
+    if (_latestDocument == null) {
+      return [];
+    }
+    final snapshot = await _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .startAfterDocument(_latestDocument!)
+        .orderBy('date')
+        .limit(limit)
+        .get();
+
+    _latestDocument = snapshot.size == 0 ? _latestDocument : snapshot.docs.last;
+    return snapshot.docs.map((e) => Comment.fromJson(e.data())).toList();
+  }
+
   Future<Comment?> get(
       {required String postId, required String commentId}) async {
     final snapshot = await _firestore

@@ -38,7 +38,7 @@ class _NewMessagePageState extends State<NewMessagePage> {
 
     final friends = <User>[];
     for (final friend in bi) {
-      final user = await _firestore.users.once(uid: friend);
+      final user = await _firestore.users.get(uid: friend);
       if (user != null) {
         friends.add(user);
       }

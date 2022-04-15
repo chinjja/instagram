@@ -34,6 +34,8 @@ class MessagePage extends StatefulWidget {
 }
 
 class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
+  static const pageSize = 25;
+
   late final _firestore = context.read<FirestoreMethods>();
   late final timestamp = Timestamp.now();
   late Chat? chat = widget.chat;
@@ -79,7 +81,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
     final map = <String, User>{};
     final list = <User>[];
     for (final uid in chat.users) {
-      final user = await _firestore.users.once(uid: uid);
+      final user = await _firestore.users.get(uid: uid);
       if (user != null) {
         map[uid] = user;
         list.add(user);
@@ -108,8 +110,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
   void _refresh() async {
     final list = await _firestore.messages.first(
       chatId: chat!.chatId,
-      start: timestamp,
-      limit: 25,
+      limit: pageSize,
     );
     if (list.isNotEmpty) {
       final copy = [...messages, ...list];
@@ -221,7 +222,9 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
             padding: const EdgeInsets.symmetric(vertical: 4),
             itemCount: messages.length,
             itemBuilder: (context, index) {
-              if (index == messages.length - 1 && index > latestMore) {
+              if (index >= pageSize - 1 &&
+                  index == messages.length - 1 &&
+                  index > latestMore) {
                 latestMore = index;
                 _fetchMore();
               }
@@ -246,7 +249,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
 
     final list = await _firestore.messages.next(
       chatId: chat!.chatId,
-      limit: 25,
+      limit: pageSize,
     );
     if (list.isNotEmpty) {
       final copy = [...messages, ...list];
@@ -269,6 +272,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
             members: {widget.currentUser.uid, ...widget.others!},
           );
           initChat(c);
+          chat = c;
         }
         _firestore.messages.send(
           chatId: chat!.chatId,

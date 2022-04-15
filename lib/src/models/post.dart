@@ -4,7 +4,7 @@ class Post {
   final String description;
   final String uid;
   final String postId;
-  final Timestamp? date;
+  final Timestamp date;
   final String postUrl;
   final double aspectRatio;
 

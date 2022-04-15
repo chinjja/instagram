@@ -34,7 +34,7 @@ class _FollowPageState extends State<FollowPage> {
   Future<void> _refresh() async {
     final list = <User>[];
     for (final uid in {...widget.followers, ...widget.following}) {
-      final user = await _firestore.users.once(uid: uid);
+      final user = await _firestore.users.get(uid: uid);
       if (user != null) {
         list.add(user);
       }

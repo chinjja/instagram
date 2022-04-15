@@ -34,7 +34,7 @@ class _ProfilePageState extends State<ProfilePage> {
   late var following = user.following;
 
   Future<void> _refresh() async {
-    final value = await _firestore.users.once(uid: user.uid);
+    final value = await _firestore.users.get(uid: user.uid);
     if (value != null) {
       setState(() {
         user = value;
