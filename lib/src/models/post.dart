@@ -31,7 +31,7 @@ class Post {
       uid: json['uid'],
       description: json['description'],
       postId: json['postId'],
-      date: json['date'],
+      date: json['date'] ?? Timestamp.now(),
       postUrl: json['postUrl'],
       aspectRatio: (json['aspectRatio'] as num).toDouble(),
     );

@@ -32,7 +32,7 @@ class Activity {
       type: json['type'],
       fromUid: json['fromUid'],
       toUid: json['toUid'],
-      date: json['date'],
+      date: json['date'] ?? Timestamp.now(),
       data: Map.castFrom(json['data']),
     );
   }

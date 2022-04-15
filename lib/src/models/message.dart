@@ -30,7 +30,7 @@ class Message {
       chatId: data['chatId'],
       uid: data['uid'],
       text: data['text'],
-      date: data['date'],
+      date: data['date'] ?? Timestamp.now(),
     );
   }
 }

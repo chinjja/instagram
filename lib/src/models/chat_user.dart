@@ -17,7 +17,7 @@ class ChatUser {
   static ChatUser fromJson(Map<String, dynamic> json) {
     return ChatUser(
       uid: json['uid'],
-      date: json['date'],
+      date: json['date'] ?? Timestamp.now(),
     );
   }
 

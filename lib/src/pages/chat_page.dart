@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/chat.dart';
 import 'package:instagram/src/models/user.dart';
+import 'package:instagram/src/pages/message_page.dart';
 import 'package:instagram/src/pages/new_message_page.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/widgets/chat_card.dart';
@@ -19,12 +20,6 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   late final _firestore = context.read<FirestoreMethods>();
-
-  @override
-  void dispose() {
-    _firestore.messages.cancelAllLatest();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +60,9 @@ class _ChatPageState extends State<ChatPage> {
                 key: ValueKey(chat.chatId),
                 chat: chat,
                 user: user,
+                onTap: () {
+                  _joinChat(chat);
+                },
               );
             },
           );
@@ -79,6 +77,20 @@ class _ChatPageState extends State<ChatPage> {
       MaterialPageRoute(
         builder: (context) => NewMessagePage(
           currentUser: widget.user,
+        ),
+      ),
+    );
+  }
+
+  void _joinChat(Chat chat) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MessagePage(
+          group: chat.group,
+          chat: chat,
+          currentUser: widget.user,
+          autoFocus: true,
         ),
       ),
     );

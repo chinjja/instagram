@@ -29,7 +29,7 @@ class Comment {
       uid: json['uid'],
       to: json['to'],
       text: json['text'],
-      date: json['date'],
+      date: json['date'] ?? Timestamp.now(),
     );
   }
 }

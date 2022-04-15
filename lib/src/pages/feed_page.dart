@@ -24,6 +24,7 @@ class FeedPage extends StatefulWidget {
 class _FeedPageState extends State<FeedPage> {
   late final _firestore = context.read<FirestoreMethods>();
   List<Post>? posts;
+  int latestMore = 0;
 
   @override
   void initState() {
@@ -32,10 +33,11 @@ class _FeedPageState extends State<FeedPage> {
   }
 
   Future<void> _refresh() async {
-    final list = await _firestore.posts.all(
-      limit: 5,
+    final list = await _firestore.posts.first(
+      limit: 3,
     );
     setState(() {
+      latestMore = 0;
       posts = list;
     });
   }
@@ -71,6 +73,10 @@ class _FeedPageState extends State<FeedPage> {
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     itemCount: posts!.length,
                     itemBuilder: (context, index) {
+                      if (index == posts!.length - 1 && index > latestMore) {
+                        latestMore = index;
+                        _fetchMore();
+                      }
                       final post = posts![index];
                       return PostCard(
                         key: ValueKey(post.postId),
@@ -93,6 +99,18 @@ class _FeedPageState extends State<FeedPage> {
               ),
       ),
     );
+  }
+
+  void _fetchMore() async {
+    final data = await _firestore.posts.next(
+      limit: 3,
+    );
+    if (data.isNotEmpty) {
+      final copy = [...posts ?? <Post>[], ...data];
+      setState(() {
+        posts = copy;
+      });
+    }
   }
 
   void _addPost() async {

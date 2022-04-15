@@ -42,12 +42,18 @@ class _PostCardState extends State<PostCard> {
     _refresh();
   }
 
+  void _update(void Function() task) {
+    if (mounted) {
+      setState(task);
+    }
+  }
+
   Future<void> _refresh() async {
     _firestore.users
         .once(
           uid: post.uid,
         )
-        .then((value) => setState(() {
+        .then((value) => _update(() {
               postUser = value;
             }));
 
@@ -56,7 +62,7 @@ class _PostCardState extends State<PostCard> {
           uid: user.uid,
           postId: post.postId,
         )
-        .then((value) => setState(() {
+        .then((value) => _update(() {
               liked = value;
             }));
 
@@ -65,7 +71,7 @@ class _PostCardState extends State<PostCard> {
           uid: user.uid,
           postId: post.postId,
         )
-        .then((value) => setState(() {
+        .then((value) => _update(() {
               bookmarkd = value;
             }));
 
@@ -73,7 +79,7 @@ class _PostCardState extends State<PostCard> {
         .getCount(
           postId: post.postId,
         )
-        .then((value) => setState(() {
+        .then((value) => _update(() {
               likeCount = value;
             }));
 
@@ -81,7 +87,7 @@ class _PostCardState extends State<PostCard> {
         .getCount(
           postId: post.postId,
         )
-        .then((value) => setState(() {
+        .then((value) => _update(() {
               commentCount = value;
             }));
   }
