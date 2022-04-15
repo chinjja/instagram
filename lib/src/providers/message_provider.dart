@@ -37,7 +37,7 @@ class MessageProvider {
       chatId: chatId,
       uid: uid,
       text: text,
-      datePublished: Timestamp.now(),
+      date: Timestamp.now(),
     );
     final data = serverTimestamp(message.toJson());
     log('create message: $messageId');
@@ -72,12 +72,60 @@ class MessageProvider {
             .asStream());
   }
 
-  Stream<Message?> last({required String chatId, Timestamp? timestamp}) {
+  Future<List<Message>> list({
+    required String chatId,
+    Timestamp? start,
+    Timestamp? end,
+    required int limit,
+  }) async {
+    assert(start != null || end != null);
+    final snapshot = await _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .where('datePublished', isLessThanOrEqualTo: start)
+        .where('datePublished', isGreaterThan: end)
+        .orderBy('datePublished', descending: true)
+        .limit(limit)
+        .get();
+    return snapshot.docs.map((doc) => Message.fromSnapshot(doc)).toList();
+  }
+
+  final _latestChat = <String, BehaviorSubject<Message?>>{};
+  final _latestSubs = <String, StreamSubscription>{};
+
+  Stream<Message?> latest({required String chatId}) {
+    return _latestChat.putIfAbsent(chatId, () {
+      final subject = BehaviorSubject<Message?>();
+
+      _latestSubs[chatId] = _latest(chatId: chatId).listen((event) {
+        subject.add(event);
+      });
+      return subject;
+    });
+  }
+
+  void cancelLatest({required String chatId}) {
+    _latestSubs[chatId]?.cancel();
+    _latestSubs.remove(chatId);
+    _latestChat[chatId]?.close();
+    _latestChat.remove(chatId);
+  }
+
+  void cancelAllLatest() {
+    for (final e in _latestChat.entries) {
+      _latestSubs[e.key]?.cancel();
+      e.value.close();
+    }
+    _latestSubs.clear();
+    _latestChat.clear();
+  }
+
+  Stream<Message?> _latest({required String chatId}) {
     return _firestore
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .where('datePublished', isGreaterThan: timestamp)
         .orderBy('datePublished', descending: true)
         .limit(1)
         .snapshots()
@@ -94,11 +142,12 @@ class MessageProvider {
   StreamSubscription listenLasts(
       {required String chatId, required Timestamp timestamp}) {
     _subjects[chatId] = BehaviorSubject.seeded([]);
-    final unsubscription =
-        last(chatId: chatId, timestamp: timestamp).listen((event) async {
+    final unsubscription = latest(chatId: chatId).listen((event) async {
       if (event != null) {
-        final list = await _subjects[chatId]!.first;
-        _subjects[chatId]!.add([event, ...list]);
+        if (event.date.compareTo(timestamp) > 0) {
+          final list = await _subjects[chatId]!.first;
+          _subjects[chatId]!.add([event, ...list]);
+        }
       }
     });
     return unsubscription;

@@ -1,54 +1,99 @@
 import 'dart:developer';
+import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:instagram/src/models/comment.dart';
-import 'package:instagram/src/models/comments.dart';
-import 'package:instagram/src/resources/storage_methods.dart';
-import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
 
 class CommentProvider {
-  CommentProvider({required this.storage});
   final _firestore = FirebaseFirestore.instance;
-  final StorageMethods storage;
 
-  Stream<Comments> at({required String id}) {
-    return _firestore
-        .collection('comments')
-        .doc(id)
-        .snapshots()
-        .where((doc) => doc.data() != null)
-        .map((event) => Comments.fromSnapshot(event));
-  }
+  static const maxDistribution = 5;
 
-  void create(WriteBatch batch, String id) {
-    batch.set(_firestore.collection('comments').doc(id),
-        Comments(id: id, list: []).toJson());
-  }
-
-  void delete(WriteBatch batch, String id) {
-    batch.delete(_firestore.collection('comments').doc(id));
-  }
-
-  Future<void> comment({
-    required String id,
-    required String uid,
-    required String to,
-    required String text,
+  Future<List<Comment>> list({
+    required String postId,
+    required int limit,
+    Timestamp? start,
+    Timestamp? end,
   }) async {
-    text = text.trim();
-    assert(text.isNotEmpty);
+    final snapshot = await _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .where('date', isLessThanOrEqualTo: start)
+        .where('date', isGreaterThan: end)
+        .orderBy('date')
+        .limit(limit)
+        .get();
+
+    return snapshot.docs.map((e) => Comment.fromJson(e.data())).toList();
+  }
+
+  Future<Comment?> get(
+      {required String postId, required String commentId}) async {
+    final snapshot = await _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .doc(commentId)
+        .get();
+
+    if (snapshot.exists) {
+      return Comment.fromJson(snapshot.data()!);
+    }
+    return null;
+  }
+
+  Future<int> getCount({
+    required String postId,
+  }) async {
+    final snapshot = await _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('commentCount')
+        .get();
+    int count = 0;
+    for (final doc in snapshot.docs) {
+      count += doc['count'] as int;
+    }
+    return count;
+  }
+
+  Comment add(
+    WriteBatch batch, {
+    required String postId,
+    required String fromUid,
+    required String toUid,
+    required String text,
+  }) {
     final commentId = const Uuid().v1();
-    final comment = Comment(
+    final comment = _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .doc(commentId);
+    final count = _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('commentCount')
+        .doc(math.Random().nextInt(maxDistribution).toString());
+
+    final obj = Comment(
       commentId: commentId,
-      uid: uid,
-      to: to,
+      uid: fromUid,
+      to: toUid,
+      date: Timestamp.now(),
       text: text,
-      datePublished: Timestamp.now(),
     );
-    log('create comment: $commentId');
-    await _firestore.collection('comments').doc(id).update({
-      'list': FieldValue.arrayUnion([comment.toJson()]),
-    });
+    final data = obj.toJson();
+    data['date'] = FieldValue.serverTimestamp();
+    batch.set(comment, data);
+    batch.set(
+      count,
+      {'count': FieldValue.increment(1)},
+      SetOptions(merge: true),
+    );
+    log('add comment $text $fromUid');
+    return obj;
   }
 }

@@ -1,23 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatUser {
-  final Timestamp timestamp;
+  final String uid;
+  final Timestamp date;
 
   const ChatUser({
-    required this.timestamp,
+    required this.uid,
+    required this.date,
   });
 
   Map<String, dynamic> toJson() => {
-        'timestamp': timestamp,
+        'uid': uid,
+        'date': date,
       };
 
   static ChatUser fromJson(Map<String, dynamic> json) {
     return ChatUser(
-      timestamp: json['timestamp'],
+      uid: json['uid'],
+      date: json['date'],
     );
   }
 
-  ChatUser copyWith({Timestamp? timestamp}) {
-    return ChatUser(timestamp: timestamp ?? this.timestamp);
+  ChatUser copyWith({Timestamp? date}) {
+    return ChatUser(uid: uid, date: date ?? this.date);
   }
 }

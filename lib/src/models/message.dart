@@ -5,14 +5,14 @@ class Message {
   final String chatId;
   final String uid;
   final String text;
-  final Timestamp datePublished;
+  final Timestamp date;
 
   const Message({
     required this.messageId,
     required this.chatId,
     required this.uid,
     required this.text,
-    required this.datePublished,
+    required this.date,
   });
 
   Map<String, dynamic> toJson() => {
@@ -20,7 +20,7 @@ class Message {
         'chatId': chatId,
         'uid': uid,
         'text': text,
-        'datePublished': datePublished,
+        'date': date,
       };
 
   static Message fromSnapshot(DocumentSnapshot<Map<String, dynamic>> snapshot) {
@@ -30,7 +30,7 @@ class Message {
       chatId: data['chatId'],
       uid: data['uid'],
       text: data['text'],
-      datePublished: data['datePublished'],
+      date: data['date'],
     );
   }
 }

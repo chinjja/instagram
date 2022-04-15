@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/user.dart';
-import 'package:instagram/src/widgets/get_user_list.dart';
+import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/widgets/user_list_tile.dart';
+import 'package:provider/provider.dart';
 
 class FollowPage extends StatefulWidget {
   const FollowPage({
@@ -21,9 +22,30 @@ class FollowPage extends StatefulWidget {
 }
 
 class _FollowPageState extends State<FollowPage> {
+  late final _firestore = context.read<FirestoreMethods>();
+  List<User>? users;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final list = <User>[];
+    for (final uid in {...widget.followers, ...widget.following}) {
+      final user = await _firestore.users.once(uid: uid);
+      if (user != null) {
+        list.add(user);
+      }
+    }
+    setState(() {
+      users = list;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final uids = {...widget.followers, ...widget.following};
     return DefaultTabController(
       initialIndex: widget.showFollows ? 0 : 1,
       length: 2,
@@ -37,14 +59,10 @@ class _FollowPageState extends State<FollowPage> {
             ],
           ),
         ),
-        body: GetUserList(
-            uids: uids.toList(),
-            builder: (context, users) {
-              return TabBarView(children: [
-                _page(widget.followers.toSet(), users ?? [], '팔로워가 없습니다.'),
-                _page(widget.following.toSet(), users ?? [], '팔로잉이 없습니다.'),
-              ]);
-            }),
+        body: TabBarView(children: [
+          _page(widget.followers.toSet(), users ?? [], '팔로워가 없습니다.'),
+          _page(widget.following.toSet(), users ?? [], '팔로잉이 없습니다.'),
+        ]),
       ),
     );
   }

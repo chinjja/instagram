@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/activity.dart';
-import 'package:instagram/src/models/bookmarks.dart';
-import 'package:instagram/src/models/comment.dart';
-import 'package:instagram/src/models/like.dart';
-import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/pages/post_list_page.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
-import 'package:instagram/src/widgets/get_user.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -26,63 +21,56 @@ class ActivityCard extends StatefulWidget {
 
 class _ActivityCardState extends State<ActivityCard> {
   late final _firestore = context.read<FirestoreMethods>();
-  Post? _post;
+  User? user;
 
   @override
   void initState() {
     super.initState();
-    if ({'like', 'unlike', 'comment'}.contains(widget.activity.type)) {
-      _firestore.posts
-          .at(uid: widget.activity.uid, postId: widget.activity.data['postId'])
-          .first
-          .then(
-            (post) => setState(() {
-              _post = post;
-            }),
-          );
-    }
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final value = await _firestore.users.once(uid: widget.activity.fromUid);
+    setState(() {
+      user = value;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final postId = widget.activity.data['postId'];
+    final postUrl = widget.activity.data['postUrl'];
+
     final activity = widget.activity;
-    return StreamBuilder<Bookmarks>(
-        stream: _firestore.users.bookmarks(uid: activity.uid),
-        builder: (context, snapshot) {
-          final bookmarks = snapshot.data;
-          return GetUser(
-            uid: activity.uid,
-            builder: (context, user) {
-              return ListTile(
-                leading: _circleNetwork(user?.photoUrl),
-                title: _makeTitle(user, activity),
-                subtitle: activity.type == 'comment'
-                    ? const Text(
-                        '답글 달기',
-                        style: TextStyle(
-                          color: Colors.grey,
-                        ),
-                      )
-                    : null,
-                trailing: _network(_post?.postUrl),
-                onTap: _post == null
-                    ? null
-                    : () {
-                        if (bookmarks != null) {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => PostListPage(
-                                        user: user!,
-                                        posts: [_post!],
-                                        bookmarks: bookmarks,
-                                      )));
-                        }
-                      },
-              );
+    return ListTile(
+      leading: _circleNetwork(user?.photoUrl),
+      title: _makeTitle(user, activity),
+      subtitle: activity.type == 'comment'
+          ? const Text(
+              '답글 달기',
+              style: TextStyle(
+                color: Colors.grey,
+              ),
+            )
+          : null,
+      trailing: _network(postUrl),
+      onTap: postId == null
+          ? null
+          : () async {
+              final post = await _firestore.posts.get(postId: postId);
+              if (post != null) {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => PostListPage(
+                              user: user!,
+                              posts: [post],
+                            )));
+              } else {
+                showSnackbar(context, '해당 포스트가 존재하지 않습니다.');
+              }
             },
-          );
-        });
+    );
   }
 
   Widget _circleNetwork(String? url) {
@@ -134,11 +122,9 @@ class _ActivityCardState extends State<ActivityCard> {
             ),
           ),
           TextSpan(
-            text: activity.datePublished == null
+            text: activity.date == null
                 ? ''
-                : DateFormat.Md()
-                    .add_jm()
-                    .format(activity.datePublished!.toDate()),
+                : DateFormat.Md().add_jm().format(activity.date!.toDate()),
             style: const TextStyle(
               color: Colors.grey,
               fontWeight: FontWeight.normal,

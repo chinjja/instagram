@@ -7,8 +7,6 @@ import 'package:instagram/src/models/message.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
-import 'package:instagram/src/widgets/get_user.dart';
-import 'package:instagram/src/widgets/get_user_list.dart';
 import 'package:instagram/src/widgets/message_card.dart';
 import 'package:instagram/src/widgets/send_text_field.dart';
 import 'package:instagram/src/widgets/user_list_tile.dart';
@@ -37,9 +35,12 @@ class MessagePage extends StatefulWidget {
 
 class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
   late final _firestore = context.read<FirestoreMethods>();
-  late final Timestamp timestamp;
+  late final timestamp = Timestamp.now();
   late Chat? chat = widget.chat;
-  StreamSubscription? subscription;
+  final subscription = CompositeSubscription();
+  Map<String, User> userMap = {};
+  List<User> userList = [];
+  Stream<List<Message>>? messageStream;
 
   @override
   void initState() {
@@ -48,15 +49,12 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
       _firestore.chats
           .findDirectChat(uid: widget.currentUser.uid, to: widget.others!.first)
           .first
-          .then((value) => setState(() {
-                chat = value;
-                initChat(chat!);
-              }))
+          .then((value) => initChat(value))
           .onError((error, stackTrace) {});
     }
-    checkMessage();
     if (chat != null) {
       initChat(chat!);
+      checkMessage();
     }
     WidgetsBinding.instance?.addObserver(this);
   }
@@ -64,7 +62,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance?.removeObserver(this);
-    subscription?.cancel();
+    subscription.cancel();
     checkMessage();
     super.dispose();
   }
@@ -76,26 +74,53 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
     }
   }
 
-  void initChat(Chat chat) {
-    timestamp = Timestamp.now();
-    subscription?.cancel();
-    subscription = _firestore.messages
-        .listenLasts(chatId: chat.chatId, timestamp: timestamp);
+  Future<void> initChat(Chat chat) async {
+    final map = <String, User>{};
+    final list = <User>[];
+    for (final uid in chat.users) {
+      final user = await _firestore.users.once(uid: uid);
+      if (user != null) {
+        map[uid] = user;
+        list.add(user);
+      }
+    }
+
+    subscription.add(_firestore.messages
+        .listenLasts(chatId: chat.chatId, timestamp: timestamp));
+    messageStream = Rx.combineLatest2(
+      _firestore.messages.lasts(chatId: chat.chatId),
+      _firestore.messages
+          .list(
+            chatId: chat.chatId,
+            start: timestamp,
+            limit: 25,
+          )
+          .asStream(),
+      (List<Message> a, List<Message> b) => [...a, ...b],
+    );
+
+    setState(() {
+      this.chat = chat;
+      userMap = map;
+      userList = list;
+    });
   }
 
   void checkMessage() {
     if (chat != null) {
-      _firestore.chats.checkMessage(chat: chat!, uid: widget.currentUser.uid);
+      _firestore.chats.updateUserTimestamp(
+        chat: chat!,
+        uid: widget.currentUser.uid,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final members = chat?.members.keys.toList();
     return Scaffold(
       appBar: AppBar(
         leading: const BackButton(),
-        title: _title(members),
+        title: _title(),
       ),
       body: SafeArea(
         child: Column(
@@ -111,12 +136,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
         child: SafeArea(
           child: Builder(
             builder: (context) {
-              return GetUserList(
-                uids: members,
-                builder: (context, users) {
-                  return _drawer(users);
-                },
-              );
+              return _drawer();
             },
           ),
         ),
@@ -124,11 +144,11 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
     );
   }
 
-  Widget _drawer(List<User>? users) {
+  Widget _drawer() {
     return Column(
       children: [
         ListTile(
-          title: Text('참여자: ${users?.length ?? 0}'),
+          title: Text('참여자: ${userList.length}'),
           subtitle: Text(
               '개설일: ${chat == null ? '' : DateFormat.yMd().format(chat!.datePublished.toDate())}'),
         ),
@@ -136,12 +156,9 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
         Expanded(
           child: ListView.builder(
             itemExtent: 60,
-            itemCount: users?.length ?? 0,
+            itemCount: userList.length,
             itemBuilder: (context, index) {
-              final user = users?[index];
-              if (user == null) {
-                return const Center(child: CircularProgressIndicator());
-              }
+              final user = userList[index];
               return UserListTile(
                 key: ValueKey(user),
                 user: user,
@@ -153,7 +170,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
     );
   }
 
-  Widget? _title(List<String>? members) {
+  Widget? _title() {
     if (widget.group) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -161,38 +178,24 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
           Text(chat?.title ?? '그룹채팅'),
           const SizedBox(width: 8),
           Text(
-            '${members?.length ?? 0}',
+            '${userList.length}',
             style: const TextStyle(color: Colors.grey),
           ),
         ],
       );
     } else {
-      final users = members == null ? widget.others : members.toList();
+      final users = userList.isEmpty ? widget.others : userList;
       final uid = oppositeItem(users, widget.currentUser.uid);
       if (uid == null) {
         return null;
       }
-      return GetUser(
-          uid: uid,
-          builder: (context, user) {
-            return Text(user?.username ?? '');
-          });
+      return Text(userMap[uid]?.username ?? '');
     }
   }
 
   Widget _body() {
     return StreamBuilder<List<Message>>(
-      stream: chat == null
-          ? null
-          : Rx.combineLatest2(
-              _firestore.messages.lasts(chatId: chat!.chatId),
-              _firestore.messages.all(
-                chatId: chat!.chatId,
-                start: timestamp,
-                limit: 25,
-              ),
-              (List<Message> a, List<Message> b) => [...a, ...b],
-            ),
+      stream: messageStream,
       builder: (context, snapshot) {
         final messages = snapshot.data ?? [];
         return GestureDetector(
@@ -208,6 +211,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
               return MessageCard(
                 key: ValueKey(message.messageId),
                 sender: widget.currentUser,
+                userMap: userMap,
                 prevMessage:
                     index == messages.length - 1 ? null : messages[index + 1],
                 message: message,
@@ -230,10 +234,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
             group: widget.group,
             members: {widget.currentUser.uid, ...widget.others!},
           );
-          setState(() {
-            chat = c;
-            initChat(chat!);
-          });
+          initChat(c);
         }
         _firestore.messages.send(
           chatId: chat!.chatId,

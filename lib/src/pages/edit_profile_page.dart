@@ -24,7 +24,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Uint8List? _image;
   late final _username = TextEditingController(text: widget.user.username);
   late final _state = TextEditingController(text: widget.user.state);
-  late final _website = TextEditingController();
+  late final _website = TextEditingController(text: widget.user.website);
   bool _uploading = false;
 
   @override
@@ -72,8 +72,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ),
                       _field('이메일', text: widget.user.email),
                       _field('이름', controller: _username),
-                      _field('소개', controller: _state),
                       _field('웹사이트', controller: _website),
+                      _field('소개', controller: _state, maxLines: null),
                     ],
                   ),
                 ),
@@ -89,6 +89,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     String name, {
     TextEditingController? controller,
     String? text,
+    int? maxLines = 1,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -101,6 +102,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
           Expanded(
             child: TextFormField(
               initialValue: text,
+              maxLines: maxLines,
+              maxLength: maxLines == null ? 500 : null,
               readOnly: controller == null,
               controller: controller,
               decoration: InputDecoration(
@@ -127,13 +130,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _uploading = true;
     });
     try {
-      await _firestore.users.update(
+      final username = _username.text.trim();
+      final state = _state.text.trim();
+      final website = _website.text.trim();
+      final value = await _firestore.users.update(
         widget.user,
         photo: _image,
-        username: _username.text,
-        state: _state.text,
+        username: username.isEmpty ? null : username,
+        state: state.isEmpty ? null : state,
+        website: website.isEmpty ? null : website,
       );
-      Navigator.pop(context);
+      Navigator.pop(context, value);
     } catch (e) {
       showSnackbar(context, e.toString());
     } finally {

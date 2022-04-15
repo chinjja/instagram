@@ -1,50 +1,56 @@
 import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:instagram/src/models/activities.dart';
 import 'package:instagram/src/models/activity.dart';
-import 'package:instagram/src/resources/storage_methods.dart';
+import 'package:uuid/uuid.dart';
 
 class ActivityProvider {
-  ActivityProvider({required this.storage});
   final _firestore = FirebaseFirestore.instance;
-  final StorageMethods storage;
 
-  Stream<Activities> at({required String uid}) {
-    return _firestore
+  Future<List<Activity>> list({
+    required String toUid,
+    required int limit,
+    Timestamp? start,
+    Timestamp? end,
+  }) async {
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(toUid)
         .collection('activities')
-        .doc(uid)
-        .snapshots()
-        .where((doc) => doc.data() != null)
-        .map((event) => Activities.fromSnapshot(event));
+        .where('date', isLessThanOrEqualTo: start)
+        .where('date', isGreaterThan: end)
+        .limit(limit)
+        .get();
+    return snapshot.docs.map((e) => Activity.fromJson(e.data())).toList();
   }
 
-  void create(WriteBatch batch, {required String uid}) {
-    batch.set(_firestore.collection('activities').doc(uid),
-        Activities(uid: uid, list: []).toJson());
-  }
-
-  void delete(WriteBatch batch, {required String uid}) {
-    batch.delete(_firestore.collection('activities').doc(uid));
-  }
-
-  Future<void> activity({
-    required String uid,
-    required String from,
+  Activity? add(
+    WriteBatch batch, {
+    required String fromUid,
+    required String toUid,
     required String type,
     required Map<String, dynamic> data,
-  }) async {
-    if (uid == from) return;
+  }) {
+    if (fromUid == toUid) return null;
 
-    final comment = Activity(
+    final activityId = const Uuid().v1();
+    final activity = Activity(
+      activityId: activityId,
       type: type,
-      uid: from,
+      fromUid: fromUid,
+      toUid: toUid,
       data: data,
-      datePublished: Timestamp.now(),
+      date: Timestamp.now(),
     );
-    log('create activity: $from');
-    await _firestore.collection('activities').doc(uid).update({
-      'list': FieldValue.arrayUnion([comment.toJson()]),
-    });
+    final doc = _firestore
+        .collection('users')
+        .doc(toUid)
+        .collection('activities')
+        .doc(activityId);
+    final json = activity.toJson();
+    json['date'] = FieldValue.serverTimestamp();
+    log('create activity: $activityId');
+    batch.set(doc, json);
+    return activity;
   }
 }

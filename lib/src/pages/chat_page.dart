@@ -20,11 +20,16 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   late final _firestore = context.read<FirestoreMethods>();
 
-  List<Chat>? latestChats;
+  @override
+  void dispose() {
+    _firestore.messages.cancelAllLatest();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = widget.user;
+    final chatsStream = _firestore.chats.chats(uid: user.uid);
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(onPressed: widget.onHideChat),
@@ -37,9 +42,9 @@ class _ChatPageState extends State<ChatPage> {
         ],
       ),
       body: StreamBuilder<List<Chat>>(
-        stream: _firestore.chats.chats(uid: user.uid),
+        stream: chatsStream,
         builder: (context, snapshot) {
-          final chats = snapshot.data ?? latestChats;
+          final chats = snapshot.data;
           if (chats == null) {
             return const Center(
               child: CircularProgressIndicator(),
@@ -50,9 +55,6 @@ class _ChatPageState extends State<ChatPage> {
               child: Text('메시지가 없습니다.'),
             );
           }
-          latestChats = chats;
-          chats.sort((a, b) => b.members[user.uid]!.timestamp
-              .compareTo(a.members[user.uid]!.timestamp));
           return ListView.builder(
             padding: const EdgeInsets.symmetric(vertical: 4),
             itemExtent: 70,

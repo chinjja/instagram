@@ -3,13 +3,7 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:instagram/src/models/activities.dart';
-import 'package:instagram/src/models/bookmarks.dart';
-import 'package:instagram/src/models/my_post.dart';
 import 'package:instagram/src/models/user.dart' as model;
-import 'package:instagram/src/providers/activity_provider.dart';
-import 'package:instagram/src/providers/bookmark_provider.dart';
-import 'package:instagram/src/providers/my_post_provider.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/resources/storage_methods.dart';
 import 'package:rxdart/rxdart.dart';
@@ -17,27 +11,29 @@ import 'package:rxdart/rxdart.dart';
 class UserProvider {
   UserProvider({
     required this.storage,
-    required this.activityProvider,
-    required this.bookmarkProvider,
-    required this.myPostProvider,
   });
   final _firestore = FirebaseFirestore.instance;
   final StorageMethods storage;
-  final ActivityProvider activityProvider;
-  final BookmarkProvider bookmarkProvider;
-  final MyPostProvider myPostProvider;
   final _cache = <String, model.User>{};
 
-  Stream<List<model.User>> search({required String username}) {
-    return _firestore
+  Future<model.User> getCurrentUser() async {
+    final user = await once(uid: currentUid);
+    return user!;
+  }
+
+  String get currentUid => FirebaseAuth.instance.currentUser!.uid;
+
+  Future<List<model.User>> search({
+    required String username,
+    required int limit,
+  }) async {
+    final snapshot = await _firestore
         .collection('users')
         .where('username', isGreaterThanOrEqualTo: username)
-        .snapshots()
-        .flatMap((e) => Stream.fromIterable(e.docs)
-            .map((event) => model.User.fromSnapshot(event))
-            .toList()
-            .asStream())
-        .doOnError((_, e) => log(e.toString()));
+        .limit(limit)
+        .get();
+
+    return snapshot.docs.map((e) => model.User.fromJson(e.data())).toList();
   }
 
   Stream<List<model.User>> all({required List<String> uids}) {
@@ -47,8 +43,8 @@ class UserProvider {
             .collection('users')
             .where('uid', whereIn: uid)
             .snapshots()
-            .flatMap((e) => Stream.fromIterable(e.docs)
-                .map((event) => model.User.fromSnapshot(event))
+            .flatMap((snapshot) => Stream.fromIterable(snapshot.docs)
+                .map((doc) => model.User.fromJson(doc.data()))
                 .doOnData((e) => _cache[e.uid] = e)
                 .toList()
                 .asStream())
@@ -59,13 +55,18 @@ class UserProvider {
     return _cache[uid];
   }
 
+  Future<model.User?> once({required String uid}) async {
+    final snapshot = await _firestore.collection('users').doc(uid).get();
+    return snapshot.exists ? model.User.fromJson(snapshot.data()!) : null;
+  }
+
   Stream<model.User> at({required String uid}) {
     return _firestore
         .collection('users')
         .doc(uid)
         .snapshots()
         .where((doc) => doc.data() != null)
-        .map((doc) => model.User.fromSnapshot(doc))
+        .map((doc) => model.User.fromJson(doc.data()!))
         .doOnData((e) => _cache[e.uid] = e)
         .doOnError((_, e) => log(e.toString()));
   }
@@ -96,13 +97,14 @@ class UserProvider {
     await batch.commit();
   }
 
-  Future<void> update(
+  Future<model.User> update(
     model.User user, {
     Uint8List? photo,
     String? username,
     String? state,
+    String? website,
   }) async {
-    final data = <String, Object?>{};
+    final data = <String, String>{};
     if (photo != null) {
       final result = await storage.uploadImageData(
         photo,
@@ -117,8 +119,20 @@ class UserProvider {
     if (state != null) {
       data['state'] = state;
     }
+    if (website != null) {
+      data['website'] = website;
+    }
     log('update user: ${user.uid}');
     await _firestore.collection('users').doc(user.uid).update(data);
+    return model.User(
+      email: user.email,
+      uid: user.uid,
+      username: data['username'] ?? user.username,
+      state: data['state'] ?? user.state,
+      website: data['website'] ?? user.website,
+      following: [...user.following],
+      followers: [...user.followers],
+    );
   }
 
   Future<bool> create(UserCredential credential) async {
@@ -141,52 +155,9 @@ class UserProvider {
             followers: [],
           ).toJson());
 
-      activityProvider.create(batch, uid: user.uid);
-      bookmarkProvider.create(batch, id: user.uid);
-      myPostProvider.create(batch, uid: user.uid);
       await batch.commit();
       return true;
     }
     return false;
-  }
-
-  Stream<Activities> activities({required String uid}) {
-    return activityProvider.at(uid: uid);
-  }
-
-  Future<void> bookmark(
-      {required String postId,
-      required String postUrl,
-      required String uid}) async {
-    await bookmarkProvider.bookmark(postId: postId, postUrl: postUrl, id: uid);
-  }
-
-  Future<void> unbookmark({required String postId, required String uid}) async {
-    await bookmarkProvider.unbookmark(postId: postId, id: uid);
-  }
-
-  Stream<Bookmarks> bookmarks({required String uid}) {
-    return bookmarkProvider.at(id: uid);
-  }
-
-  void addPost(
-    WriteBatch batch, {
-    required String postId,
-    required String postUrl,
-    required String uid,
-  }) {
-    myPostProvider.add(batch, postId: postId, postUrl: postUrl, uid: uid);
-  }
-
-  void removePost(
-    WriteBatch batch, {
-    required String postId,
-    required String uid,
-  }) {
-    myPostProvider.remove(batch, postId: postId, uid: uid);
-  }
-
-  Stream<MyPosts> posts({required String uid}) {
-    return myPostProvider.at(uid: uid);
   }
 }

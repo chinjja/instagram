@@ -5,6 +5,7 @@ class User {
   final String uid;
   final String username;
   final String? state;
+  final String? website;
   final String? photoUrl;
   final List<String> following;
   final List<String> followers;
@@ -15,6 +16,7 @@ class User {
     this.photoUrl,
     required this.username,
     this.state,
+    this.website,
     required this.following,
     required this.followers,
   });
@@ -30,6 +32,7 @@ class User {
   Map<String, dynamic> toJson() => {
         'username': username,
         'state': state,
+        'website': website,
         'uid': uid,
         'email': email,
         'photoUrl': photoUrl,
@@ -37,16 +40,16 @@ class User {
         'followers': followers,
       };
 
-  static User fromSnapshot(DocumentSnapshot snapshot) {
-    final data = snapshot.data() as Map<String, dynamic>;
+  static User fromJson(Map<String, dynamic> json) {
     return User(
-      username: data['username'],
-      state: data['state'],
-      uid: data['uid'],
-      email: data['email'],
-      photoUrl: data['photoUrl'],
-      following: List.castFrom(data['following'] ?? []),
-      followers: List.castFrom(data['followers'] ?? []),
+      username: json['username'],
+      state: json['state'],
+      website: json['website'],
+      uid: json['uid'],
+      email: json['email'],
+      photoUrl: json['photoUrl'],
+      following: List.castFrom(json['following'] ?? []),
+      followers: List.castFrom(json['followers'] ?? []),
     );
   }
 }

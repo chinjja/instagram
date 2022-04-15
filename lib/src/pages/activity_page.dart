@@ -1,7 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:instagram/src/models/activities.dart';
 import 'package:instagram/src/models/activity.dart';
-import 'package:instagram/src/models/comment.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/widgets/activity_cart.dart';
@@ -21,39 +20,59 @@ class ActivityPage extends StatefulWidget {
 class _ActivityPageState extends State<ActivityPage> {
   late final _firestore = context.read<FirestoreMethods>();
 
+  List<Activity>? activities;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final list = await _firestore.activities
+        .list(toUid: widget.currentUser.uid, limit: 15);
+    setState(() {
+      activities = list;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final currentUser = widget.currentUser;
     return Scaffold(
-      appBar: AppBar(title: const Text('활동')),
+      appBar: AppBar(
+        title: const Text('활동'),
+        actions: [
+          if (kIsWeb)
+            IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh)),
+        ],
+      ),
       body: SafeArea(
-        child: StreamBuilder<Activities>(
-            stream: _firestore.users.activities(uid: currentUser.uid),
-            builder: (context, snapshot) {
-              final activities = snapshot.data?.list;
-              if (activities == null) {
-                return const Center(
-                  child: CircularProgressIndicator(),
-                );
-              }
-              if (activities.isEmpty) {
-                return const Center(
-                  child: Text('활동이 없습니다.'),
-                );
-              }
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                itemCount: activities.length,
-                itemBuilder: (context, index) {
-                  final activity = activities[activities.length - index - 1];
-                  return ActivityCard(
-                    key: ValueKey('$index'),
-                    activity: activity,
-                  );
-                },
-                separatorBuilder: (context, index) => const Divider(),
-              );
-            }),
+        child: activities == null
+            ? const Center(child: CircularProgressIndicator())
+            : Stack(
+                children: [
+                  RefreshIndicator(
+                    onRefresh: _refresh,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      itemCount: activities!.length,
+                      itemBuilder: (context, index) {
+                        final activity =
+                            activities![activities!.length - index - 1];
+                        return ActivityCard(
+                          key: ValueKey('$index'),
+                          activity: activity,
+                        );
+                      },
+                      separatorBuilder: (context, index) => const Divider(),
+                    ),
+                  ),
+                  if (activities!.isEmpty)
+                    const Center(
+                      child: Text('활동이 없습니다.'),
+                    )
+                ],
+              ),
       ),
     );
   }

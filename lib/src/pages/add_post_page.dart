@@ -58,8 +58,9 @@ class _AddPostPageState extends State<AddPostPage> {
             child: const LinearProgressIndicator(),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 InkWell(
                   onTap: () async {
@@ -81,10 +82,16 @@ class _AddPostPageState extends State<AddPostPage> {
                         : Image.memory(_image!),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
+                    autofocus: true,
                     controller: _description,
+                    maxLength: 1000,
+                    minLines: 3,
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
                     decoration: const InputDecoration(
                       hintText: '문구 입력...',
                       border: InputBorder.none,
@@ -122,13 +129,13 @@ class _AddPostPageState extends State<AddPostPage> {
     setState(() {
       _uploading = true;
     });
-    await _firestore.posts.create(
+    final post = await _firestore.posts.add(
       description: _description.text,
       file: _image!,
       uid: widget.user.uid,
     );
 
-    Navigator.pop(context);
+    Navigator.pop(context, post);
     showSnackbar(context, 'Done!');
   }
 }

@@ -1,7 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:instagram/src/models/comment.dart';
-import 'package:instagram/src/models/comments.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
@@ -26,11 +24,28 @@ class CommentPage extends StatefulWidget {
 
 class _CommentPageState extends State<CommentPage> {
   late final _firestore = context.read<FirestoreMethods>();
+  late final post = widget.post;
+
+  List<Comment> comments = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final list = await _firestore.comments.list(
+      postId: post.postId,
+      limit: 10,
+    );
+    setState(() {
+      comments = list;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final post = widget.post;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('댓글'),
@@ -39,18 +54,11 @@ class _CommentPageState extends State<CommentPage> {
         child: Column(
           children: [
             Expanded(
-              child: StreamBuilder<Comments>(
-                  stream: _firestore.posts.comments(
-                    postId: post.postId,
-                  ),
-                  builder: (context, snapshot) {
-                    final comments = snapshot.data?.list;
-                    if (comments == null) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-                    return ListView.builder(
+              child: comments.isEmpty
+                  ? const Center(
+                      child: Text('댓글이 없습니다.'),
+                    )
+                  : ListView.builder(
                       itemCount: comments.length,
                       itemBuilder: (context, index) {
                         final comment = comments[index];
@@ -59,19 +67,21 @@ class _CommentPageState extends State<CommentPage> {
                           comment: comment,
                         );
                       },
-                    );
-                  }),
+                    ),
             ),
             SendTextField(
               user: widget.user,
               hintText: '댓글 달기...',
               sendText: '게시',
-              onTap: (text) {
-                _firestore.posts.comment(
+              onTap: (text) async {
+                final comment = await _firestore.posts.addComment(
                   post: widget.post,
                   uid: widget.user.uid,
                   text: text,
                 );
+                setState(() {
+                  comments.add(comment);
+                });
               },
             ),
           ],
