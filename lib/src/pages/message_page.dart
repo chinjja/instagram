@@ -35,11 +35,12 @@ class MessagePage extends StatefulWidget {
 
 class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
   late final _firestore = context.read<FirestoreMethods>();
-  late final Timestamp timestamp;
+  late final timestamp = Timestamp.now();
   late Chat? chat = widget.chat;
   final subscription = CompositeSubscription();
   Map<String, User> userMap = {};
   List<User> userList = [];
+  Stream<List<Message>>? messageStream;
 
   @override
   void initState() {
@@ -48,15 +49,12 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
       _firestore.chats
           .findDirectChat(uid: widget.currentUser.uid, to: widget.others!.first)
           .first
-          .then((value) => setState(() {
-                chat = value;
-                initChat(chat!);
-              }))
+          .then((value) => initChat(value))
           .onError((error, stackTrace) {});
     }
-    checkMessage();
     if (chat != null) {
       initChat(chat!);
+      checkMessage();
     }
     WidgetsBinding.instance?.addObserver(this);
   }
@@ -77,10 +75,6 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
   }
 
   Future<void> initChat(Chat chat) async {
-    timestamp = Timestamp.now();
-    subscription.add(_firestore.messages
-        .listenLasts(chatId: chat.chatId, timestamp: timestamp));
-
     final map = <String, User>{};
     final list = <User>[];
     for (final uid in chat.users) {
@@ -90,7 +84,23 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
         list.add(user);
       }
     }
+
+    subscription.add(_firestore.messages
+        .listenLasts(chatId: chat.chatId, timestamp: timestamp));
+    messageStream = Rx.combineLatest2(
+      _firestore.messages.lasts(chatId: chat.chatId),
+      _firestore.messages
+          .list(
+            chatId: chat.chatId,
+            start: timestamp,
+            limit: 25,
+          )
+          .asStream(),
+      (List<Message> a, List<Message> b) => [...a, ...b],
+    );
+
     setState(() {
+      this.chat = chat;
       userMap = map;
       userList = list;
     });
@@ -185,17 +195,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
 
   Widget _body() {
     return StreamBuilder<List<Message>>(
-      stream: chat == null
-          ? null
-          : Rx.combineLatest2(
-              _firestore.messages.lasts(chatId: chat!.chatId),
-              _firestore.messages.all(
-                chatId: chat!.chatId,
-                start: timestamp,
-                limit: 25,
-              ),
-              (List<Message> a, List<Message> b) => [...a, ...b],
-            ),
+      stream: messageStream,
       builder: (context, snapshot) {
         final messages = snapshot.data ?? [];
         return GestureDetector(
@@ -234,10 +234,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
             group: widget.group,
             members: {widget.currentUser.uid, ...widget.others!},
           );
-          setState(() {
-            chat = c;
-            initChat(chat!);
-          });
+          initChat(c);
         }
         _firestore.messages.send(
           chatId: chat!.chatId,

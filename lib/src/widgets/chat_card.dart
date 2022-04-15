@@ -31,7 +31,7 @@ class _ChatCardState extends State<ChatCard> {
     final chat = widget.chat;
     final user = widget.user;
     final members = chat.users;
-    final mesageStream = _firestore.messages.last(chatId: chat.chatId);
+    final mesageStream = _firestore.messages.latest(chatId: chat.chatId);
     final userTimestamp =
         _firestore.chats.user(chatId: chat.chatId, uid: user.uid);
     final usersStream = _firestore.users.all(uids: members.take(4).toList());
@@ -185,6 +185,8 @@ class _ChatCardState extends State<ChatCard> {
                 .take(4)
                 .map((uid) => map[uid])
                 .where((user) => user != null)
+                .cast<User>()
+                .map((user) => user.username)
                 .join(', '),
             maxLines: 1,
             overflow: TextOverflow.fade,
