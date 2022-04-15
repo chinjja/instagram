@@ -95,13 +95,11 @@ class MessageProvider {
   Future<List<Message>> first({
     required String chatId,
     required int limit,
-    required Timestamp start,
   }) async {
     final snapshot = await _firestore
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .where('datePublished', isLessThanOrEqualTo: start)
         .orderBy('datePublished', descending: true)
         .limit(limit)
         .get();
@@ -113,6 +111,9 @@ class MessageProvider {
     required String chatId,
     required int limit,
   }) async {
+    if (_latestDocument == null) {
+      return first(chatId: chatId, limit: limit);
+    }
     final snapshot = await _firestore
         .collection('chats')
         .doc(chatId)

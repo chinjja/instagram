@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Activity {
   final String activityId;
+  final String postId;
   final String type;
   final String fromUid;
   final String toUid;
@@ -10,6 +11,7 @@ class Activity {
 
   const Activity({
     required this.activityId,
+    required this.postId,
     required this.type,
     required this.fromUid,
     required this.toUid,
@@ -19,6 +21,7 @@ class Activity {
 
   Map<String, dynamic> toJson() => {
         'activityId': activityId,
+        'postId': postId,
         'type': type,
         'fromUid': fromUid,
         'toUid': toUid,
@@ -29,6 +32,7 @@ class Activity {
   static Activity fromJson(Map<String, dynamic> json) {
     return Activity(
       activityId: json['activityId'],
+      postId: json['postId'],
       type: json['type'],
       fromUid: json['fromUid'],
       toUid: json['toUid'],

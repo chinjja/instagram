@@ -4,7 +4,7 @@ class Comment {
   final String commentId;
   final String uid;
   final String to;
-  final Timestamp? date;
+  final Timestamp date;
   final String text;
 
   const Comment({

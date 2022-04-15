@@ -30,7 +30,7 @@ class _ActivityCardState extends State<ActivityCard> {
   }
 
   Future<void> _refresh() async {
-    final value = await _firestore.users.once(uid: widget.activity.fromUid);
+    final value = await _firestore.users.get(uid: widget.activity.fromUid);
     setState(() {
       user = value;
     });
@@ -38,7 +38,7 @@ class _ActivityCardState extends State<ActivityCard> {
 
   @override
   Widget build(BuildContext context) {
-    final postId = widget.activity.data['postId'];
+    final postId = widget.activity.postId;
     final postUrl = widget.activity.data['postUrl'];
 
     final activity = widget.activity;
@@ -54,22 +54,20 @@ class _ActivityCardState extends State<ActivityCard> {
             )
           : null,
       trailing: _network(postUrl),
-      onTap: postId == null
-          ? null
-          : () async {
-              final post = await _firestore.posts.get(postId: postId);
-              if (post != null) {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => PostListPage(
-                              user: user!,
-                              posts: [post],
-                            )));
-              } else {
-                showSnackbar(context, '해당 포스트가 존재하지 않습니다.');
-              }
-            },
+      onTap: () async {
+        final post = await _firestore.posts.get(postId: postId);
+        if (post != null) {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => PostListPage(
+                        user: user!,
+                        posts: [post],
+                      )));
+        } else {
+          showSnackbar(context, '해당 포스트가 존재하지 않습니다.');
+        }
+      },
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:instagram/src/models/comment.dart';
 import 'package:instagram/src/models/post.dart';
 import 'package:instagram/src/models/user.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
+import 'package:instagram/src/widgets/comment_base_cart.dart';
 import 'package:instagram/src/widgets/comment_cart.dart';
 import 'package:instagram/src/widgets/send_text_field.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +26,7 @@ class CommentPage extends StatefulWidget {
 class _CommentPageState extends State<CommentPage> {
   late final _firestore = context.read<FirestoreMethods>();
   late final post = widget.post;
+  int latestMore = 0;
 
   List<Comment> comments = [];
 
@@ -35,13 +37,27 @@ class _CommentPageState extends State<CommentPage> {
   }
 
   Future<void> _refresh() async {
-    final list = await _firestore.comments.list(
+    final list = await _firestore.comments.first(
       postId: post.postId,
       limit: 10,
     );
     setState(() {
+      latestMore = 0;
       comments = list;
     });
+  }
+
+  void _fetchMore() async {
+    final data = await _firestore.comments.next(
+      postId: post.postId,
+      limit: 10,
+    );
+    if (data.isNotEmpty) {
+      final copy = [...comments, ...data];
+      setState(() {
+        comments = copy;
+      });
+    }
   }
 
   @override
@@ -54,20 +70,39 @@ class _CommentPageState extends State<CommentPage> {
         child: Column(
           children: [
             Expanded(
-              child: comments.isEmpty
-                  ? const Center(
-                      child: Text('댓글이 없습니다.'),
-                    )
-                  : ListView.builder(
-                      itemCount: comments.length,
-                      itemBuilder: (context, index) {
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Column(
+                      children: [
+                        CommentBaseCard(
+                          user: widget.user,
+                          text: post.description,
+                          date: post.date,
+                        ),
+                        const Divider(),
+                      ],
+                    ),
+                  ),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        if (index == comments.length - 1 &&
+                            index > latestMore) {
+                          latestMore = index;
+                          _fetchMore();
+                        }
                         final comment = comments[index];
                         return CommentCard(
                           key: ValueKey(comment.commentId),
                           comment: comment,
                         );
                       },
+                      childCount: comments.length,
                     ),
+                  ),
+                ],
+              ),
             ),
             SendTextField(
               user: widget.user,

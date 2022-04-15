@@ -59,9 +59,18 @@ class _ActivityPageState extends State<ActivityPage> {
                       itemBuilder: (context, index) {
                         final activity =
                             activities![activities!.length - index - 1];
-                        return ActivityCard(
-                          key: ValueKey('$index'),
-                          activity: activity,
+                        return Dismissible(
+                          key: UniqueKey(),
+                          onDismissed: (dir) {
+                            _firestore.activities
+                                .delete(activityId: activity.activityId);
+                            setState(() {
+                              activities?.removeAt(index);
+                            });
+                          },
+                          child: ActivityCard(
+                            activity: activity,
+                          ),
                         );
                       },
                       separatorBuilder: (context, index) => const Divider(),
