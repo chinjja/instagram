@@ -37,10 +37,13 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
   late final _firestore = context.read<FirestoreMethods>();
   late final timestamp = Timestamp.now();
   late Chat? chat = widget.chat;
-  final subscription = CompositeSubscription();
+  StreamSubscription? subscription;
   Map<String, User> userMap = {};
   List<User> userList = [];
   Stream<List<Message>>? messageStream;
+  late Stream<List<Message>> latestMessateStream;
+  int latestMore = 0;
+  List<Message> messages = [];
 
   @override
   void initState() {
@@ -60,7 +63,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance?.removeObserver(this);
-    subscription.cancel();
+    subscription?.cancel();
     checkMessage();
     super.dispose();
   }
@@ -82,26 +85,39 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
         list.add(user);
       }
     }
-
-    subscription.add(_firestore.messages
-        .listenLasts(chatId: chat.chatId, timestamp: timestamp));
-    messageStream = Rx.combineLatest2(
-      _firestore.messages.lasts(chatId: chat.chatId),
-      _firestore.messages
-          .list(
-            chatId: chat.chatId,
-            start: timestamp,
-            limit: 25,
-          )
-          .asStream(),
-      (List<Message> a, List<Message> b) => [...a, ...b],
-    );
-
+    subscription =
+        _firestore.messages.latest(chatId: chat.chatId).listen((event) {
+      if (event != null && event.date.compareTo(timestamp) > 0) {
+        if (messages.isEmpty || event.messageId != messages.first.messageId) {
+          final copy = [event, ...messages];
+          messages = copy;
+          setState(() {
+            messageStream = Stream.value(messages);
+          });
+        }
+      }
+    });
     setState(() {
       this.chat = chat;
       userMap = map;
       userList = list;
     });
+    _refresh();
+  }
+
+  void _refresh() async {
+    final list = await _firestore.messages.first(
+      chatId: chat!.chatId,
+      start: timestamp,
+      limit: 25,
+    );
+    if (list.isNotEmpty) {
+      final copy = [...messages, ...list];
+      messages = copy;
+      setState(() {
+        messageStream = Stream.value(messages);
+      });
+    }
   }
 
   void checkMessage() {
@@ -205,6 +221,10 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
             padding: const EdgeInsets.symmetric(vertical: 4),
             itemCount: messages.length,
             itemBuilder: (context, index) {
+              if (index == messages.length - 1 && index > latestMore) {
+                latestMore = index;
+                _fetchMore();
+              }
               final message = messages[index];
               return MessageCard(
                 key: ValueKey(message.messageId),
@@ -219,6 +239,22 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
         );
       },
     );
+  }
+
+  void _fetchMore() async {
+    if (chat == null) return;
+
+    final list = await _firestore.messages.next(
+      chatId: chat!.chatId,
+      limit: 25,
+    );
+    if (list.isNotEmpty) {
+      final copy = [...messages, ...list];
+      messages = copy;
+      setState(() {
+        messageStream = Stream.value(messages);
+      });
+    }
   }
 
   Widget _input() {

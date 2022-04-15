@@ -91,37 +91,41 @@ class MessageProvider {
     return snapshot.docs.map((doc) => Message.fromSnapshot(doc)).toList();
   }
 
-  final _latestChat = <String, BehaviorSubject<Message?>>{};
-  final _latestSubs = <String, StreamSubscription>{};
+  QueryDocumentSnapshot? _latestDocument;
+  Future<List<Message>> first({
+    required String chatId,
+    required int limit,
+    required Timestamp start,
+  }) async {
+    final snapshot = await _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .where('datePublished', isLessThanOrEqualTo: start)
+        .orderBy('datePublished', descending: true)
+        .limit(limit)
+        .get();
+    _latestDocument = snapshot.size == 0 ? null : snapshot.docs.last;
+    return snapshot.docs.map((doc) => Message.fromSnapshot(doc)).toList();
+  }
+
+  Future<List<Message>> next({
+    required String chatId,
+    required int limit,
+  }) async {
+    final snapshot = await _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .orderBy('datePublished', descending: true)
+        .startAfterDocument(_latestDocument!)
+        .limit(limit)
+        .get();
+    _latestDocument = snapshot.size == 0 ? _latestDocument : snapshot.docs.last;
+    return snapshot.docs.map((doc) => Message.fromSnapshot(doc)).toList();
+  }
 
   Stream<Message?> latest({required String chatId}) {
-    return _latestChat.putIfAbsent(chatId, () {
-      final subject = BehaviorSubject<Message?>();
-
-      _latestSubs[chatId] = _latest(chatId: chatId).listen((event) {
-        subject.add(event);
-      });
-      return subject;
-    });
-  }
-
-  void cancelLatest({required String chatId}) {
-    _latestSubs[chatId]?.cancel();
-    _latestSubs.remove(chatId);
-    _latestChat[chatId]?.close();
-    _latestChat.remove(chatId);
-  }
-
-  void cancelAllLatest() {
-    for (final e in _latestChat.entries) {
-      _latestSubs[e.key]?.cancel();
-      e.value.close();
-    }
-    _latestSubs.clear();
-    _latestChat.clear();
-  }
-
-  Stream<Message?> _latest({required String chatId}) {
     return _firestore
         .collection('chats')
         .doc(chatId)
@@ -135,25 +139,5 @@ class MessageProvider {
             .defaultIfEmpty(null)
             .first
             .asStream());
-  }
-
-  final _subjects = <String, BehaviorSubject<List<Message>>>{};
-
-  StreamSubscription listenLasts(
-      {required String chatId, required Timestamp timestamp}) {
-    _subjects[chatId] = BehaviorSubject.seeded([]);
-    final unsubscription = latest(chatId: chatId).listen((event) async {
-      if (event != null) {
-        if (event.date.compareTo(timestamp) > 0) {
-          final list = await _subjects[chatId]!.first;
-          _subjects[chatId]!.add([event, ...list]);
-        }
-      }
-    });
-    return unsubscription;
-  }
-
-  Stream<List<Message>> lasts({required String chatId}) {
-    return _subjects[chatId]!;
   }
 }

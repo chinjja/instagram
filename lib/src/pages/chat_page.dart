@@ -22,12 +22,6 @@ class _ChatPageState extends State<ChatPage> {
   late final _firestore = context.read<FirestoreMethods>();
 
   @override
-  void dispose() {
-    _firestore.messages.cancelAllLatest();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final user = widget.user;
     final chatsStream = _firestore.chats.chats(uid: user.uid);
