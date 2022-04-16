@@ -1,3 +1,8 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'bookmark.g.dart';
+
+@JsonSerializable()
 class Bookmark {
   final String postId;
   final String postUrl;
@@ -7,15 +12,7 @@ class Bookmark {
     required this.postUrl,
   });
 
-  Map<String, dynamic> toJson() => {
-        'postId': postId,
-        'postUrl': postUrl,
-      };
-
-  static Bookmark fromJson(Map<String, dynamic> json) {
-    return Bookmark(
-      postId: json['postId'],
-      postUrl: json['postUrl'],
-    );
-  }
+  factory Bookmark.fromJson(Map<String, dynamic> json) =>
+      _$BookmarkFromJson(json);
+  Map<String, dynamic> toJson() => _$BookmarkToJson(this);
 }

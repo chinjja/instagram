@@ -16,7 +16,7 @@ class CommentBaseCard extends StatefulWidget {
   }) : super(key: key);
   final User? user;
   final String text;
-  final Timestamp date;
+  final DateTime date;
   final Widget? trailing;
   final void Function()? onTap;
   @override
@@ -68,7 +68,7 @@ class _CommentBaseCardState extends State<CommentBaseCard> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    DateFormat.yMMMd().add_jm().format(widget.date.toDate()),
+                    DateFormat.yMMMd().add_jm().format(widget.date),
                     style: const TextStyle(color: Colors.grey),
                   ),
                 ],

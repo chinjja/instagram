@@ -1,10 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:instagram/src/converter/timerstamp_converter.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'comment.g.dart';
+
+@JsonSerializable()
 class Comment {
   final String commentId;
   final String uid;
   final String to;
-  final Timestamp date;
+  @TimestampConverter()
+  final DateTime date;
   final String text;
 
   const Comment({
@@ -15,21 +21,7 @@ class Comment {
     required this.text,
   });
 
-  Map<String, dynamic> toJson() => {
-        'commentId': commentId,
-        'uid': uid,
-        'to': to,
-        'text': text,
-        'date': date,
-      };
-
-  static Comment fromJson(Map<String, dynamic> json) {
-    return Comment(
-      commentId: json['commentId'],
-      uid: json['uid'],
-      to: json['to'],
-      text: json['text'],
-      date: json['date'] ?? Timestamp.now(),
-    );
-  }
+  factory Comment.fromJson(Map<String, dynamic> json) =>
+      _$CommentFromJson(json);
+  Map<String, dynamic> toJson() => _$CommentToJson(this);
 }

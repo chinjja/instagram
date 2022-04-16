@@ -37,7 +37,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
   static const pageSize = 25;
 
   late final _firestore = context.read<FirestoreMethods>();
-  late final timestamp = Timestamp.now();
+  late final timestamp = DateTime.now();
   late Chat? chat = widget.chat;
   StreamSubscription? subscription;
   Map<String, User> userMap = {};
@@ -165,7 +165,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
         ListTile(
           title: Text('참여자: ${userList.length}'),
           subtitle: Text(
-              '개설일: ${chat == null ? '' : DateFormat.yMd().format(chat!.datePublished.toDate())}'),
+              '개설일: ${chat == null ? '' : DateFormat.yMd().format(chat!.datePublished)}'),
         ),
         const Divider(),
         Expanded(

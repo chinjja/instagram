@@ -1,10 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:instagram/src/converter/timerstamp_converter.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'post.g.dart';
+
+@JsonSerializable()
 class Post {
   final String description;
   final String uid;
   final String postId;
-  final Timestamp date;
+  @TimestampConverter()
+  final DateTime date;
   final String postUrl;
   final double aspectRatio;
 
@@ -17,23 +23,6 @@ class Post {
     required this.aspectRatio,
   });
 
-  Map<String, dynamic> toJson() => {
-        'uid': uid,
-        'description': description,
-        'postId': postId,
-        'date': date,
-        'postUrl': postUrl,
-        'aspectRatio': aspectRatio,
-      };
-
-  static Post fromJson(Map<String, dynamic> json) {
-    return Post(
-      uid: json['uid'],
-      description: json['description'],
-      postId: json['postId'],
-      date: json['date'] ?? Timestamp.now(),
-      postUrl: json['postUrl'],
-      aspectRatio: (json['aspectRatio'] as num).toDouble(),
-    );
-  }
+  factory Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(json);
+  Map<String, dynamic> toJson() => _$PostToJson(this);
 }

@@ -1,5 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:instagram/src/converter/timerstamp_converter.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'chat.g.dart';
+
+@JsonSerializable()
 class Chat {
   final String chatId;
   final List<String> users;
@@ -8,7 +13,8 @@ class Chat {
   final String? owner;
   final String? photoUrl;
   final String? tag;
-  final Timestamp datePublished;
+  @TimestampConverter()
+  final DateTime datePublished;
 
   const Chat({
     required this.chatId,
@@ -21,28 +27,6 @@ class Chat {
     required this.datePublished,
   });
 
-  Map<String, dynamic> toJson() => {
-        'chatId': chatId,
-        'users': users,
-        'group': group,
-        'title': title,
-        'owner': owner,
-        'photoUrl': photoUrl,
-        'tag': tag,
-        'datePublished': datePublished,
-      };
-
-  static Chat fromSnapshot(DocumentSnapshot snapshot) {
-    final data = snapshot.data() as Map<String, dynamic>;
-    return Chat(
-      chatId: data['chatId'],
-      users: List.castFrom(data['users']),
-      group: data['group'],
-      title: data['title'],
-      owner: data['owner'],
-      photoUrl: data['photoUrl'],
-      tag: data['tag'],
-      datePublished: data['datePublished'],
-    );
-  }
+  factory Chat.fromJson(Map<String, dynamic> json) => _$ChatFromJson(json);
+  Map<String, dynamic> toJson() => _$ChatToJson(this);
 }

@@ -106,7 +106,7 @@ class PostProvider {
       description: description,
       uid: uid,
       postId: postId,
-      date: Timestamp.now(),
+      date: DateTime.now(),
       postUrl: photo.url,
       aspectRatio: photo.width / photo.height,
     );

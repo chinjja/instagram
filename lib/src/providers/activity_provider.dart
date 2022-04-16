@@ -48,7 +48,7 @@ class ActivityProvider {
       fromUid: fromUid,
       toUid: toUid,
       data: data,
-      date: Timestamp.now(),
+      date: DateTime.now(),
     );
     final doc = _firestore.collection('activities').doc(activityId);
     final json = activity.toJson();

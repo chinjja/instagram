@@ -1,5 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'user.g.dart';
+
+@JsonSerializable()
 class User {
   final String email;
   final String uid;
@@ -29,27 +33,6 @@ class User {
     return following.contains(uid);
   }
 
-  Map<String, dynamic> toJson() => {
-        'username': username,
-        'state': state,
-        'website': website,
-        'uid': uid,
-        'email': email,
-        'photoUrl': photoUrl,
-        'following': following,
-        'followers': followers,
-      };
-
-  static User fromJson(Map<String, dynamic> json) {
-    return User(
-      username: json['username'],
-      state: json['state'],
-      website: json['website'],
-      uid: json['uid'],
-      email: json['email'],
-      photoUrl: json['photoUrl'],
-      following: List.castFrom(json['following'] ?? []),
-      followers: List.castFrom(json['followers'] ?? []),
-    );
-  }
+  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+  Map<String, dynamic> toJson() => _$UserToJson(this);
 }

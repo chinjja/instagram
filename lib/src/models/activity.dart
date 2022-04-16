@@ -1,12 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:instagram/src/converter/timerstamp_converter.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'activity.g.dart';
+
+@JsonSerializable()
 class Activity {
   final String activityId;
   final String postId;
   final String type;
   final String fromUid;
   final String toUid;
-  final Timestamp? date;
+  @TimestampConverter()
+  final DateTime date;
   final Map<String, dynamic> data;
 
   const Activity({
@@ -19,25 +25,7 @@ class Activity {
     required this.data,
   });
 
-  Map<String, dynamic> toJson() => {
-        'activityId': activityId,
-        'postId': postId,
-        'type': type,
-        'fromUid': fromUid,
-        'toUid': toUid,
-        'date': date,
-        'data': data,
-      };
-
-  static Activity fromJson(Map<String, dynamic> json) {
-    return Activity(
-      activityId: json['activityId'],
-      postId: json['postId'],
-      type: json['type'],
-      fromUid: json['fromUid'],
-      toUid: json['toUid'],
-      date: json['date'] ?? Timestamp.now(),
-      data: Map.castFrom(json['data']),
-    );
-  }
+  factory Activity.fromJson(Map<String, dynamic> json) =>
+      _$ActivityFromJson(json);
+  Map<String, dynamic> toJson() => _$ActivityToJson(this);
 }

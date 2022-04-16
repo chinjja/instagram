@@ -120,9 +120,7 @@ class _ActivityCardState extends State<ActivityCard> {
             ),
           ),
           TextSpan(
-            text: activity.date == null
-                ? ''
-                : DateFormat.Md().add_jm().format(activity.date!.toDate()),
+            text: DateFormat.Md().add_jm().format(activity.date),
             style: const TextStyle(
               color: Colors.grey,
               fontWeight: FontWeight.normal,

@@ -119,7 +119,7 @@ class CommentProvider {
       commentId: commentId,
       uid: fromUid,
       to: toUid,
-      date: Timestamp.now(),
+      date: DateTime.now(),
       text: text,
     );
     final data = obj.toJson();

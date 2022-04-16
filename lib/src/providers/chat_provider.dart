@@ -49,7 +49,7 @@ class ChatProvider {
       owner: owner,
       photoUrl: photoUrl,
       tag: group ? null : _tag(members),
-      datePublished: Timestamp.now(),
+      datePublished: DateTime.now(),
     );
     final data = chat.toJson();
     data['date'] = FieldValue.serverTimestamp();
@@ -75,12 +75,13 @@ class ChatProvider {
     await batch.commit();
   }
 
-  Stream<Chat> at({required String chatId}) {
+  Stream<Chat?> at({required String chatId}) {
     return _firestore
         .collection(_chats)
         .doc(chatId)
         .snapshots()
-        .map((doc) => Chat.fromSnapshot(doc));
+        .where((doc) => doc.data() != null)
+        .map((doc) => Chat.fromJson(doc.data()!));
   }
 
   String _tag(Iterable<String> uids) {
@@ -110,7 +111,7 @@ class ChatProvider {
         .where('tag', isEqualTo: _tag([uid, to]))
         .get();
 
-    return snapshot.size == 0 ? null : Chat.fromSnapshot(snapshot.docs[0]);
+    return snapshot.size == 0 ? null : Chat.fromJson(snapshot.docs[0].data());
   }
 
   Stream<List<Chat>> all({required List<String> chatIds}) {
@@ -121,7 +122,7 @@ class ChatProvider {
             .where('chatId', whereIn: ids)
             .snapshots()
             .flatMap((value) => Stream.fromIterable(value.docs)
-                .map((doc) => Chat.fromSnapshot(doc))
+                .map((doc) => Chat.fromJson(doc.data()))
                 .toList()
                 .asStream()));
   }
@@ -132,7 +133,7 @@ class ChatProvider {
         .where('users', arrayContains: uid)
         .snapshots()
         .flatMap((snapshot) => Stream.fromIterable(snapshot.docs)
-            .map((doc) => Chat.fromSnapshot(doc))
+            .map((doc) => Chat.fromJson(doc.data()))
             .toList()
             .asStream());
   }
@@ -179,7 +180,7 @@ class ChatProvider {
     required Chat chat,
     required String uid,
   }) {
-    final user = ChatUser(uid: uid, date: Timestamp.now());
+    final user = ChatUser(uid: uid, date: DateTime.now());
     final data = user.toJson();
     data['date'] = FieldValue.serverTimestamp();
 
@@ -230,7 +231,7 @@ class ChatProvider {
         .doc(chat.chatId)
         .collection('users')
         .doc(uid)
-        .update({
+        .set({
       'date': FieldValue.serverTimestamp(),
     });
   }

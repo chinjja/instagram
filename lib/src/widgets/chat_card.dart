@@ -107,7 +107,7 @@ class _ChatCardState extends State<ChatCard> {
                 Text(
                   DateFormat.yMd()
                       .add_jm()
-                      .format(message?.date.toDate() ?? DateTime.now()),
+                      .format(message?.date ?? DateTime.now()),
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.grey,

@@ -37,7 +37,7 @@ class MessageProvider {
       chatId: chatId,
       uid: uid,
       text: text,
-      date: Timestamp.now(),
+      date: DateTime.now(),
     );
     final data = serverTimestamp(message.toJson());
     log('create message: $messageId');
@@ -67,7 +67,7 @@ class MessageProvider {
         .limit(limit)
         .snapshots()
         .flatMap((snapshot) => Stream.fromIterable(snapshot.docs)
-            .map((doc) => Message.fromSnapshot(doc))
+            .map((doc) => Message.fromJson(doc.data()))
             .toList()
             .asStream());
   }
@@ -88,7 +88,7 @@ class MessageProvider {
         .orderBy('datePublished', descending: true)
         .limit(limit)
         .get();
-    return snapshot.docs.map((doc) => Message.fromSnapshot(doc)).toList();
+    return snapshot.docs.map((doc) => Message.fromJson(doc.data())).toList();
   }
 
   QueryDocumentSnapshot? _latestDocument;
@@ -104,7 +104,7 @@ class MessageProvider {
         .limit(limit)
         .get();
     _latestDocument = snapshot.size == 0 ? null : snapshot.docs.last;
-    return snapshot.docs.map((doc) => Message.fromSnapshot(doc)).toList();
+    return snapshot.docs.map((doc) => Message.fromJson(doc.data())).toList();
   }
 
   Future<List<Message>> next({
@@ -123,7 +123,7 @@ class MessageProvider {
         .limit(limit)
         .get();
     _latestDocument = snapshot.size == 0 ? _latestDocument : snapshot.docs.last;
-    return snapshot.docs.map((doc) => Message.fromSnapshot(doc)).toList();
+    return snapshot.docs.map((doc) => Message.fromJson(doc.data())).toList();
   }
 
   Stream<Message?> latest({required String chatId}) {
@@ -135,7 +135,7 @@ class MessageProvider {
         .limit(1)
         .snapshots()
         .flatMap((snapshot) => Stream.fromIterable(snapshot.docs)
-            .map((doc) => Message.fromSnapshot(doc))
+            .map((doc) => Message.fromJson(doc.data()))
             .cast<Message?>()
             .defaultIfEmpty(null)
             .first

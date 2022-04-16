@@ -241,7 +241,7 @@ class _PostCardState extends State<PostCard> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Text(
-                  DateFormat.yMMMd().add_jm().format(post.date.toDate()),
+                  DateFormat.yMMMd().add_jm().format(post.date),
                   style: const TextStyle(
                     color: Colors.grey,
                   ),
