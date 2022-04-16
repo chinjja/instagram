@@ -1,24 +1,20 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:instagram/src/models/converter/timerstamp_converter.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'token.g.dart';
+
+@JsonSerializable()
 class Token {
   final String tokenId;
-  final Timestamp datePublished;
+  @TimestampConverter()
+  final DateTime date;
 
   const Token({
     required this.tokenId,
-    required this.datePublished,
+    required this.date,
   });
 
-  Map<String, dynamic> toJson() => {
-        'tokenId': tokenId,
-        'datePublished': datePublished,
-      };
-
-  static Token fromSnapshot(DocumentSnapshot<Map<String, dynamic>> snapshot) {
-    final data = snapshot.data()!;
-    return Token(
-      tokenId: data['tokenId'],
-      datePublished: data['datePublished'],
-    );
-  }
+  factory Token.fromJson(Map<String, dynamic> json) => _$TokenFromJson(json);
+  Map<String, dynamic> toJson() => _$TokenToJson(this);
 }

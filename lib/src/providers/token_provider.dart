@@ -15,7 +15,7 @@ class TokenProvider {
         .collection('tokens')
         .snapshots()
         .flatMap((e) => Stream.fromIterable(e.docs)
-            .map((event) => Token.fromSnapshot(event))
+            .map((doc) => Token.fromJson(doc.data()))
             .toList()
             .asStream());
   }
@@ -30,13 +30,13 @@ class TokenProvider {
     final tokens = await all(uid: uid).first;
     final batch = _firestore.batch();
     for (final t in tokens) {
-      if (t.datePublished.toDate().isBefore(removeDate)) {
+      if (t.date.isBefore(removeDate)) {
         batch.delete(tokensRef.doc(t.tokenId));
       }
     }
     final result = Token(
       tokenId: token,
-      datePublished: Timestamp.now(),
+      date: DateTime.now(),
     );
     final data = result.toJson();
     data['date'] = FieldValue.serverTimestamp();
