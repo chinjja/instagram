@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:instagram/src/converter/timerstamp_converter.dart';
+import 'package:instagram/src/models/converter/timerstamp_converter.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'comment.g.dart';
