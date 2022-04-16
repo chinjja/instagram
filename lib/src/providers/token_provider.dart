@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:instagram/src/models/token.dart';
 import 'package:instagram/src/resources/storage_methods.dart';
-import 'package:instagram/src/utils/utils.dart';
 import 'package:rxdart/rxdart.dart';
 
 class TokenProvider {
@@ -39,7 +38,8 @@ class TokenProvider {
       tokenId: token,
       datePublished: Timestamp.now(),
     );
-    final data = serverTimestamp(result.toJson());
+    final data = result.toJson();
+    data['date'] = FieldValue.serverTimestamp();
     batch.set(tokensRef.doc(token), data);
     await batch.commit();
     return result;

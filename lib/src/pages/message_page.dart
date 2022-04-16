@@ -165,7 +165,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
         ListTile(
           title: Text('참여자: ${userList.length}'),
           subtitle: Text(
-              '개설일: ${chat == null ? '' : DateFormat.yMd().format(chat!.datePublished)}'),
+              '개설일: ${chat == null ? '' : DateFormat.yMd().format(chat!.date)}'),
         ),
         const Divider(),
         Expanded(

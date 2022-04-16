@@ -49,7 +49,7 @@ class ChatProvider {
       owner: owner,
       photoUrl: photoUrl,
       tag: group ? null : _tag(members),
-      datePublished: DateTime.now(),
+      date: DateTime.now(),
     );
     final data = chat.toJson();
     data['date'] = FieldValue.serverTimestamp();

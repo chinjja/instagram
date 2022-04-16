@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:instagram/src/models/user.dart';
@@ -30,14 +29,6 @@ void showSnackbar(BuildContext context, String message) {
 
 NetworkImage? networkImage(String? url) {
   return url == null ? null : NetworkImage(url);
-}
-
-Map<String, dynamic> serverTimestamp(
-  Map<String, dynamic> json, {
-  String key = 'datePublished',
-}) {
-  json[key] = FieldValue.serverTimestamp();
-  return json;
 }
 
 User? opposite(List<User>? list, User user) {

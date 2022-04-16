@@ -4,7 +4,6 @@ import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:instagram/src/models/message.dart';
 import 'package:instagram/src/resources/storage_methods.dart';
-import 'package:instagram/src/utils/utils.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
 
@@ -39,7 +38,8 @@ class MessageProvider {
       text: text,
       date: DateTime.now(),
     );
-    final data = serverTimestamp(message.toJson());
+    final data = message.toJson();
+    data['date'] = FieldValue.serverTimestamp();
     log('create message: $messageId');
     await _firestore
         .collection('chats')

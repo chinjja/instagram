@@ -14,7 +14,7 @@ class Chat {
   final String? photoUrl;
   final String? tag;
   @TimestampConverter()
-  final DateTime datePublished;
+  final DateTime date;
 
   const Chat({
     required this.chatId,
@@ -24,7 +24,7 @@ class Chat {
     required this.owner,
     required this.photoUrl,
     required this.tag,
-    required this.datePublished,
+    required this.date,
   });
 
   factory Chat.fromJson(Map<String, dynamic> json) => _$ChatFromJson(json);
