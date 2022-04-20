@@ -61,9 +61,9 @@ class MessageProvider {
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .where('datePublished', isLessThanOrEqualTo: start)
-        .where('datePublished', isGreaterThan: end)
-        .orderBy('datePublished', descending: true)
+        .where('date', isLessThanOrEqualTo: start)
+        .where('date', isGreaterThan: end)
+        .orderBy('date', descending: true)
         .limit(limit)
         .snapshots()
         .flatMap((snapshot) => Stream.fromIterable(snapshot.docs)
@@ -83,9 +83,9 @@ class MessageProvider {
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .where('datePublished', isLessThanOrEqualTo: start)
-        .where('datePublished', isGreaterThan: end)
-        .orderBy('datePublished', descending: true)
+        .where('date', isLessThanOrEqualTo: start)
+        .where('date', isGreaterThan: end)
+        .orderBy('date', descending: true)
         .limit(limit)
         .get();
     return snapshot.docs.map((doc) => Message.fromJson(doc.data())).toList();
@@ -100,7 +100,7 @@ class MessageProvider {
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .orderBy('datePublished', descending: true)
+        .orderBy('date', descending: true)
         .limit(limit)
         .get();
     _latestDocument = snapshot.size == 0 ? null : snapshot.docs.last;
@@ -118,7 +118,7 @@ class MessageProvider {
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .orderBy('datePublished', descending: true)
+        .orderBy('date', descending: true)
         .startAfterDocument(_latestDocument!)
         .limit(limit)
         .get();
@@ -131,7 +131,7 @@ class MessageProvider {
         .collection('chats')
         .doc(chatId)
         .collection('messages')
-        .orderBy('datePublished', descending: true)
+        .orderBy('date', descending: true)
         .limit(1)
         .snapshots()
         .flatMap((snapshot) => Stream.fromIterable(snapshot.docs)
