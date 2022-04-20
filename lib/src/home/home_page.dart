@@ -9,7 +9,10 @@ class HomeView extends StatefulWidget {
   const HomeView({Key? key}) : super(key: key);
 
   static Route route() {
-    return MaterialPageRoute(builder: (_) => const HomeView());
+    return MaterialPageRoute(
+      builder: (_) => const HomeView(),
+      settings: const RouteSettings(name: '/'),
+    );
   }
 
   @override
