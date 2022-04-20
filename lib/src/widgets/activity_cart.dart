@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:instagram/src/models/activity.dart';
-import 'package:instagram/src/models/user.dart';
-import 'package:instagram/src/pages/post_list_page.dart';
+import 'package:instagram/src/post/view/post_page.dart';
+import 'package:instagram/src/repo/models/model.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
 import 'package:intl/intl.dart';
@@ -54,20 +53,17 @@ class _ActivityCardState extends State<ActivityCard> {
             )
           : null,
       trailing: _network(postUrl),
-      onTap: () async {
-        final post = await _firestore.posts.get(postId: postId);
-        if (post != null) {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => PostListPage(
-                        user: user!,
-                        posts: [post],
-                      )));
-        } else {
-          showSnackbar(context, '해당 포스트가 존재하지 않습니다.');
-        }
-      },
+      onTap: user == null
+          ? null
+          : () async {
+              final post = await _firestore.posts.get(postId: postId);
+              if (post != null) {
+                Navigator.push(
+                    context, PostPage.route(user: user!, fixed: [post]));
+              } else {
+                showSnackbar(context, '해당 포스트가 조재하지 않습니다.');
+              }
+            },
     );
   }
 

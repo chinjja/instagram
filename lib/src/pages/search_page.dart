@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:instagram/src/models/user.dart';
+import 'package:instagram/src/repo/models/model.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/widgets/user_list_tile.dart';
 import 'package:provider/provider.dart';

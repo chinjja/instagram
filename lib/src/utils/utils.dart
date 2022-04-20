@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:instagram/src/models/user.dart';
+import 'package:instagram/src/repo/models/model.dart';
 
 Future<Uint8List?> pickImageData(ImageSource source) async {
   final path = await ImagePicker().pickImage(source: source);

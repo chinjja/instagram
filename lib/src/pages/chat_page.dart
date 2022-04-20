@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:instagram/src/models/chat.dart';
-import 'package:instagram/src/models/user.dart';
+import 'package:instagram/src/repo/models/model.dart';
 import 'package:instagram/src/pages/message_page.dart';
 import 'package:instagram/src/pages/new_message_page.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';

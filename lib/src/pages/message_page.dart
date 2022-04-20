@@ -2,9 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:instagram/src/models/chat.dart';
-import 'package:instagram/src/models/message.dart';
-import 'package:instagram/src/models/user.dart';
+import 'package:instagram/src/repo/models/model.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
 import 'package:instagram/src/widgets/message_card.dart';
