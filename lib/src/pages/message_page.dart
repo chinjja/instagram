@@ -111,8 +111,7 @@ class _MessagePageState extends State<MessagePage> with WidgetsBindingObserver {
       limit: pageSize,
     );
     if (list.isNotEmpty) {
-      final copy = [...messages, ...list];
-      messages = copy;
+      messages = list;
       setState(() {
         messageStream = Stream.value(messages);
       });
