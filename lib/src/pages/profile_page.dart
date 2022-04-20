@@ -1,13 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
-import 'package:instagram/src/models/post.dart';
-import 'package:instagram/src/models/user.dart';
+import 'package:instagram/src/auth/bloc/auth_cubit.dart';
+import 'package:instagram/src/post/view/post_page.dart';
+import 'package:instagram/src/repo/models/model.dart';
 import 'package:instagram/src/pages/edit_profile_page.dart';
 import 'package:instagram/src/pages/follower_page.dart';
 import 'package:instagram/src/pages/message_page.dart';
-import 'package:instagram/src/pages/post_list_page.dart';
-import 'package:instagram/src/resources/auth_methods.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
 import 'package:provider/provider.dart';
@@ -26,7 +24,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  late final _auth = context.read<AuthMethods>();
   late final _firestore = context.read<FirestoreMethods>();
   final _gridPostsKey = GlobalKey();
   late User user = widget.user;
@@ -46,7 +43,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final postStream = _firestore.posts.list(uid: user.uid, limit: 10);
+    final postStream = _firestore.posts.fetch(byUser: user, limit: 10);
 
     final currentUid = _firestore.users.currentUid;
     final isOnwer = user.uid == currentUid;
@@ -256,9 +253,7 @@ class _ProfilePageState extends State<ProfilePage> {
           aspectRatio: 1,
           child: GestureDetector(
             onTap: () {
-              _feed(
-                user,
-              );
+              _feed(user);
             },
             child: Image.network(
               post.postUrl,
@@ -289,19 +284,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _feed(User user) async {
-    final posts = await _firestore.posts.list(
-      uid: user.uid,
-      start: Timestamp.now(),
-      limit: 15,
-    );
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => PostListPage(
-          user: user,
-          posts: posts,
-        ),
-      ),
+      PostPage.route(user: user, byUser: user, showActions: false),
     );
   }
 
@@ -381,7 +366,7 @@ class _ProfilePageState extends State<ProfilePage> {
             actions: [
               TextButton(
                   onPressed: () {
-                    _auth.signOut(context);
+                    context.read<AuthCubit>().signout();
                   },
                   child: const Text('로그아웃')),
               TextButton(

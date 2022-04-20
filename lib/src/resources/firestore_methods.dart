@@ -1,14 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:instagram/src/providers/activity_provider.dart';
-import 'package:instagram/src/providers/bookmark_provider.dart';
-import 'package:instagram/src/providers/chat_provider.dart';
-import 'package:instagram/src/providers/comment_provider.dart';
-import 'package:instagram/src/providers/like_provider.dart';
-import 'package:instagram/src/providers/message_provider.dart';
-import 'package:instagram/src/providers/post_provider.dart';
-import 'package:instagram/src/providers/user_provider.dart';
+import 'package:instagram/src/repo/providers/provider.dart';
 import 'package:rxdart/rxdart.dart';
 
 class FirestoreMethods {

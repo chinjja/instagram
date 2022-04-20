@@ -33,7 +33,6 @@ dependencies:
   firebase_auth: ^3.3.12
   firebase_storage: ^10.2.10
   cloud_firestore: ^3.1.11
-  provider: ^6.0.2
   rxdart: ^0.27.3
   image: ^3.1.3
   image_picker: ^0.8.4+11
@@ -44,6 +43,8 @@ dependencies:
   flutter_linkify: ^5.0.2
   url_launcher: ^6.0.20
   json_annotation:
+  flutter_bloc:
+  equatable:
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -55,6 +56,8 @@ dev_dependencies:
     sdk: flutter
   build_runner:
   json_serializable:
+  bloc_test:
+  mocktail:
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

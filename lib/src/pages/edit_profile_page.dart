@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:instagram/src/models/user.dart';
+import 'package:instagram/src/repo/models/user.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
 import 'package:provider/provider.dart';

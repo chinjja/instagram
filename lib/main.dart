@@ -1,21 +1,12 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:instagram/src/pages/home_page.dart';
-import 'package:instagram/src/pages/welcome.dart';
-import 'package:instagram/src/providers/activity_provider.dart';
-import 'package:instagram/src/providers/bookmark_provider.dart';
-import 'package:instagram/src/providers/chat_provider.dart';
-import 'package:instagram/src/providers/comment_provider.dart';
-import 'package:instagram/src/providers/like_provider.dart';
-import 'package:instagram/src/providers/message_provider.dart';
-import 'package:instagram/src/providers/post_provider.dart';
-import 'package:instagram/src/providers/user_provider.dart';
-import 'package:instagram/src/resources/auth_methods.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:instagram/app.dart';
+import 'package:instagram/src/auth/bloc/auth_cubit.dart';
+import 'package:instagram/src/repo/providers/provider.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/resources/storage_methods.dart';
-import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,16 +22,14 @@ void main() async {
   }
   await Firebase.initializeApp(options: options);
   runApp(
-    MultiProvider(
+    MultiRepositoryProvider(
       providers: [
-        Provider.value(value: _storage),
-        Provider.value(value: _firestore),
-        Provider.value(value: _auth),
+        RepositoryProvider.value(value: _storage),
+        RepositoryProvider.value(value: _firestore),
       ],
-      child: MaterialApp(
-        title: 'Instagram Demo',
-        theme: ThemeData.dark(),
-        home: const MyApp(),
+      child: BlocProvider(
+        create: (context) => AuthCubit(_firestore),
+        child: const App(),
       ),
     ),
   );
@@ -69,21 +58,3 @@ final _firestore = FirestoreMethods(
   messages: _messages,
   bookmarks: _bookmarkProvider,
 );
-final _auth = AuthMethods(firestore: _firestore);
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        final user = snapshot.data;
-        if (user == null) {
-          return const WelcomePage();
-        }
-        return const HomePage();
-      },
-    );
-  }
-}
