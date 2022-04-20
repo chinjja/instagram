@@ -181,6 +181,7 @@ class ChatProvider {
   }) {
     final user = ChatUser(uid: uid, date: DateTime.now());
     final data = user.toJson();
+    print(data);
     data['date'] = FieldValue.serverTimestamp();
 
     log('add user to chat: $uid');
@@ -231,6 +232,7 @@ class ChatProvider {
         .collection('users')
         .doc(uid)
         .set({
+      'uid': uid,
       'date': FieldValue.serverTimestamp(),
     });
   }
