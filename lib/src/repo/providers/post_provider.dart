@@ -8,6 +8,7 @@ import 'package:instagram/src/repo/providers/provider.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/resources/storage_methods.dart';
 import 'package:uuid/uuid.dart';
+import 'package:image/image.dart';
 
 class PostProvider {
   PostProvider({
@@ -29,10 +30,14 @@ class PostProvider {
     User? byUser,
     Post? cursor,
   }) async {
+    Timestamp? timestamp;
+    if (cursor != null) {
+      timestamp = Timestamp.fromDate(cursor.date);
+    }
     final snapshot = await _firestore
         .collection('posts')
         .where('uid', isEqualTo: byUser?.uid)
-        .where('date', isLessThan: cursor?.date)
+        .where('date', isLessThan: timestamp)
         .orderBy('date', descending: true)
         .limit(limit)
         .get();
@@ -49,30 +54,22 @@ class PostProvider {
     return null;
   }
 
-  Future<Post> add(PostCreateDto dto) async {
-    final postId = const Uuid().v1();
+  Future<Post> save(Post obj) async {
     final photo = await storage.uploadImageData(
-      dto.file,
+      Uint8List.fromList(encodePng(obj.postImage!)),
       'posts',
-      postId,
+      obj.postId,
     );
 
-    final description = dto.description.trim();
+    obj = obj.copyWith(postUrl: photo.url);
+
     final batch = _firestore.batch();
-    final post = _firestore.collection('posts').doc(postId);
-    final obj = Post(
-      description: description,
-      uid: dto.uid,
-      postId: postId,
-      date: DateTime.now(),
-      postUrl: photo.url,
-      aspectRatio: photo.width / photo.height,
-    );
+    final post = _firestore.collection('posts').doc(obj.postId);
     final data = obj.toJson();
     data['date'] = FieldValue.serverTimestamp();
     batch.set(post, data);
 
-    log('add post: $postId');
+    log('add post: ${obj.postId}');
     await batch.commit();
     return obj;
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:instagram/src/auth/bloc/auth_cubit.dart';
 import 'package:instagram/src/comment/bloc/comment_cubit.dart';
 import 'package:instagram/src/comment/view/comment_base_cart.dart';
 import 'package:instagram/src/comment/view/comment_cart.dart';
@@ -9,30 +10,27 @@ import 'package:instagram/src/widgets/send_text_field.dart';
 
 class CommentPage extends StatelessWidget {
   static Route route({
-    required User user,
     required Post post,
   }) =>
       MaterialPageRoute(
           builder: (_) => CommentPage(
-                user: user,
                 post: post,
               ));
 
   const CommentPage({
     Key? key,
-    required this.user,
     required this.post,
   }) : super(key: key);
 
-  final User user;
   final Post post;
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.select((AuthCubit cubit) => cubit.user);
     return BlocProvider(
       create: (context) => CommentCubit(
         context.read<FirestoreMethods>(),
-        auth: user,
+        auth: auth,
         post: post,
       )..fetch(),
       child: const CommentView(),

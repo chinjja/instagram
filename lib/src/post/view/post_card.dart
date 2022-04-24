@@ -1,27 +1,41 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image/image.dart' as im;
+import 'package:instagram/src/auth/bloc/auth_cubit.dart';
 import 'package:instagram/src/comment/view/comment_page.dart';
-import 'package:instagram/src/repo/models/model.dart';
 import 'package:instagram/src/pages/profile_page.dart';
 import 'package:instagram/src/post/bloc/post_cubit.dart';
 import 'package:instagram/src/post/models/models.dart';
 import 'package:instagram/src/utils/utils.dart';
 import 'package:intl/intl.dart';
-import 'package:rxdart/rxdart.dart';
 
 class PostCard extends StatelessWidget {
   const PostCard({
     Key? key,
     required this.post,
-    required this.user,
   }) : super(key: key);
   final PostData post;
-  final User user;
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.select((AuthCubit cubit) => cubit.user);
+    if (post.isCreating) {
+      Uint8List data = Uint8List.fromList(im.encodePng(post.post.postImage!));
+      return ListTile(
+        leading: Image.memory(
+          data,
+          width: 48,
+          height: 48,
+        ),
+        title: const LinearProgressIndicator(),
+        subtitle: Text(post.post.description),
+      );
+    }
     return Column(
       children: [
+        if (post.isDeleting) const LinearProgressIndicator(),
         Row(
           children: [
             GestureDetector(
@@ -29,7 +43,7 @@ class PostCard extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ProfilePage(user: post.user),
+                    builder: (context) => ProfilePage(user: post.user!),
                   ),
                 );
               },
@@ -37,15 +51,15 @@ class PostCard extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 child: CircleAvatar(
                   radius: 20,
-                  backgroundImage: networkImage(post.user.photoUrl),
+                  backgroundImage: networkImage(post.user?.photoUrl),
                 ),
               ),
             ),
             Expanded(
-              child: Text(post.user.username),
+              child: Text(post.user?.username ?? ''),
             ),
             Visibility(
-              visible: post.post.uid == user.uid,
+              visible: post.post.uid == auth.uid,
               child: PopupMenuButton(
                 itemBuilder: (context) {
                   return [
@@ -71,7 +85,7 @@ class PostCard extends StatelessWidget {
           child: AspectRatio(
             aspectRatio: post.post.aspectRatio,
             child: Image.network(
-              post.post.postUrl,
+              post.post.postUrl!,
               fit: BoxFit.fitHeight,
             ),
           ),
@@ -89,7 +103,11 @@ class PostCard extends StatelessWidget {
             ),
             IconButton(
               onPressed: () {
-                _comment(context, autoFocus: true);
+                Navigator.push(
+                    context,
+                    CommentPage.route(
+                      post: post.post,
+                    ));
               },
               icon: const Icon(Icons.comment_outlined),
             ),
@@ -119,7 +137,7 @@ class PostCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: RichText(
                     text: TextSpan(
-                      text: post.user.username + ' ',
+                      text: (post.user?.username ?? '') + ' ',
                       style: Theme.of(context)
                           .textTheme
                           .bodyText1
@@ -135,7 +153,11 @@ class PostCard extends StatelessWidget {
                 ),
               InkWell(
                 onTap: () {
-                  _comment(context, autoFocus: false);
+                  Navigator.push(
+                      context,
+                      CommentPage.route(
+                        post: post.post,
+                      ));
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
@@ -161,9 +183,5 @@ class PostCard extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  void _comment(BuildContext context, {required bool autoFocus}) {
-    Navigator.push(context, CommentPage.route(user: user, post: post.post));
   }
 }

@@ -57,12 +57,21 @@ class PostCubit extends Cubit<PostState> {
     }
   }
 
-  void create(PostCreateDto dto) async {
-    emit(state.copyWith(status: PostStatus.creating));
-    final data = await _methods.posts.add(dto);
-    final posts = await _map([data]);
-    final copy = [...posts, ...state.posts];
+  void create(Post post) async {
+    final copy = [
+      PostData(
+        isCreating: true,
+        post: post,
+      ),
+      ...state.posts
+    ];
     emit(state.copyWith(status: PostStatus.success, posts: copy));
+
+    final data = await get(await _methods.posts.save(post));
+    final index = state.posts.indexWhere((p) => p.post.postId == post.postId);
+    final copy2 = [...state.posts];
+    copy2[index] = data;
+    emit(state.copyWith(status: PostStatus.success, posts: copy2));
   }
 
   void delete(PostData data) async {
@@ -70,6 +79,10 @@ class PostCubit extends Cubit<PostState> {
       (p) => p.post.postId == data.post.postId,
     );
     if (index != -1) {
+      final cpy1 = [...state.posts];
+      final post = cpy1[index];
+      cpy1[index] = post.copyWith(isDeleting: true);
+      emit(state.copyWith(posts: cpy1));
       await _methods.posts.delete(post: data.post);
       final copy =
           state.posts.where((p) => p.post.postId != data.post.postId).toList();
@@ -80,56 +93,44 @@ class PostCubit extends Cubit<PostState> {
   Future<void> refresh() async {
     if (fixed != null) return;
 
+    emit(state.copyWith(
+      status: PostStatus.loading,
+      posts: [],
+      hasReachedMax: false,
+    ));
+    await _fetch();
+  }
+
+  void fetch() async {
+    if (state.hasReachedMax || _isFetching) return;
+    _isFetching = true;
+    try {
+      if (state.status == PostStatus.initial) {
+        await refresh();
+      } else if (state.posts.isNotEmpty) {
+        await _fetch(cursor: state.posts.last.post);
+      }
+    } finally {
+      await Future.delayed(const Duration(milliseconds: 100));
+      _isFetching = false;
+    }
+  }
+
+  Future<void> _fetch({Post? cursor}) async {
     final data = await _methods.posts.fetch(
       byUser: byUser,
+      cursor: cursor,
       limit: limit,
     );
     final posts = await _map(data);
     emit(state.copyWith(
       status: PostStatus.success,
-      posts: posts,
+      posts: [
+        ...state.posts,
+        ...posts,
+      ],
       hasReachedMax: posts.length < limit,
     ));
-  }
-
-  void fetch() async {
-    if (state.hasReachedMax) return;
-    if (_isFetching) {
-      return;
-    }
-    _isFetching = true;
-
-    try {
-      if (state.status == PostStatus.initial) {
-        emit(state.copyWith(status: PostStatus.loading));
-        if (fixed == null) {
-          await refresh();
-        } else {
-          final posts = await _map(fixed!);
-          emit(state.copyWith(
-            status: PostStatus.success,
-            posts: posts,
-            hasReachedMax: true,
-          ));
-        }
-      } else if (state.posts.isNotEmpty) {
-        final data = await _methods.posts.fetch(
-          byUser: byUser,
-          cursor: state.posts.last.post,
-          limit: limit,
-        );
-        final posts = await _map(data);
-        emit(state.copyWith(
-          posts: [
-            ...state.posts,
-            ...posts,
-          ],
-          hasReachedMax: posts.length < limit,
-        ));
-      }
-    } finally {
-      _isFetching = false;
-    }
   }
 
   Future<PostData> get(Post post) async {

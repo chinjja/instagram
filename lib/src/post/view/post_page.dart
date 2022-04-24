@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:instagram/src/auth/bloc/auth_cubit.dart';
 import 'package:instagram/src/repo/models/model.dart';
-import 'package:instagram/src/post/view/add_post_page.dart';
+import 'package:instagram/src/post/view/add_post_view.dart';
 import 'package:instagram/src/post/bloc/post_cubit.dart';
 import 'package:instagram/src/post/view/view.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 
 class PostPage extends StatelessWidget {
   static Route route({
-    required User user,
     User? byUser,
     bool showActions = false,
     List<Post>? fixed,
   }) {
     return MaterialPageRoute(
         builder: (_) => PostPage(
-              user: user,
               byUser: byUser,
               showActions: showActions,
               fixed: fixed,
@@ -24,14 +23,12 @@ class PostPage extends StatelessWidget {
 
   const PostPage(
       {Key? key,
-      required this.user,
       this.byUser,
       this.showActions = false,
       this.fixed,
       this.onShowChat})
       : super(key: key);
 
-  final User user;
   final User? byUser;
   final bool showActions;
   final List<Post>? fixed;
@@ -39,10 +36,11 @@ class PostPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.select((AuthCubit cubit) => cubit.user);
     return BlocProvider(
       create: (context) => PostCubit(
         context.read<FirestoreMethods>(),
-        auth: user,
+        auth: auth,
         byUser: byUser,
         showActions: showActions,
         fixed: fixed,
@@ -70,7 +68,7 @@ class PostView extends StatelessWidget {
                     onPressed: () async {
                       final post = await Navigator.push(
                         context,
-                        AddPostPage.route(bloc.auth),
+                        AddPostView.route(),
                       );
                       if (post != null) {
                         context.read<PostCubit>().create(post);
@@ -89,13 +87,6 @@ class PostView extends StatelessWidget {
               return RefreshIndicator(
                   onRefresh: () => context.read<PostCubit>().refresh(),
                   child: PostList(state: state));
-            case PostStatus.creating:
-              return Column(
-                children: [
-                  const LinearProgressIndicator(),
-                  Expanded(child: PostList(state: state)),
-                ],
-              );
             case PostStatus.failure:
             default:
               return const PostError();

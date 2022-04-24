@@ -256,7 +256,7 @@ class _ProfilePageState extends State<ProfilePage> {
               _feed(user);
             },
             child: Image.network(
-              post.postUrl,
+              post.postUrl!,
               fit: BoxFit.cover,
             ),
           ),
@@ -286,7 +286,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void _feed(User user) async {
     Navigator.push(
       context,
-      PostPage.route(user: user, byUser: user, showActions: false),
+      PostPage.route(byUser: user, showActions: false),
     );
   }
 

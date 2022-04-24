@@ -58,8 +58,7 @@ class _ActivityCardState extends State<ActivityCard> {
           : () async {
               final post = await _firestore.posts.get(postId: postId);
               if (post != null) {
-                Navigator.push(
-                    context, PostPage.route(user: user!, fixed: [post]));
+                Navigator.push(context, PostPage.route(fixed: [post]));
               } else {
                 showSnackbar(context, '해당 포스트가 조재하지 않습니다.');
               }

@@ -111,7 +111,6 @@ class _NavViewState extends State<NavView> {
             children: [
               KeepAliveWidget(
                 child: PostPage(
-                  user: auth,
                   showActions: true,
                   onShowChat: () {
                     context.read<HomeCubit>().chat();

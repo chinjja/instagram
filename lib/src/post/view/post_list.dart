@@ -42,7 +42,6 @@ class _PostListState extends State<PostList> {
 
   @override
   Widget build(BuildContext context) {
-    final bloc = context.read<PostCubit>();
     final posts = widget.state.posts;
     if (posts.isEmpty) {
       return const Center(child: Text('포스트가 없습니다.'));
@@ -60,7 +59,6 @@ class _PostListState extends State<PostList> {
         return PostCard(
           key: Key(post.post.postId),
           post: post,
-          user: bloc.auth,
         );
       },
     );

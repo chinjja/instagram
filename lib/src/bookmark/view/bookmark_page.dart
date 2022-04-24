@@ -114,8 +114,7 @@ class BookmarkList extends StatelessWidget {
             onTap: () async {
               final post = await bloc.getPost(bookmark);
               if (post != null) {
-                Navigator.push(
-                    context, PostPage.route(user: auth, fixed: [post]));
+                Navigator.push(context, PostPage.route(fixed: [post]));
               } else {
                 showSnackbar(context, '해당 포스트가 조재하지 않습니다.');
               }

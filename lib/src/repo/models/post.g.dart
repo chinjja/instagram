@@ -9,10 +9,10 @@ part of 'post.dart';
 Post _$PostFromJson(Map<String, dynamic> json) => Post(
       description: json['description'] as String,
       uid: json['uid'] as String,
-      postId: json['postId'] as String,
+      postId: json['postId'] as String?,
       date: const TimestampConverter().fromJson(json['date'] as Timestamp),
-      postUrl: json['postUrl'] as String,
-      aspectRatio: (json['aspectRatio'] as num).toDouble(),
+      postUrl: json['postUrl'] as String?,
+      aspectRatio: (json['aspectRatio'] as num?)?.toDouble(),
     );
 
 Map<String, dynamic> _$PostToJson(Post instance) => <String, dynamic>{

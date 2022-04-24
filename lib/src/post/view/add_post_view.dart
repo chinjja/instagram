@@ -1,25 +1,25 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image/image.dart' as im;
 import 'package:image_picker/image_picker.dart';
+import 'package:instagram/src/auth/bloc/auth_cubit.dart';
 import 'package:instagram/src/repo/models/model.dart';
 import 'package:instagram/src/utils/utils.dart';
 
-class AddPostPage extends StatefulWidget {
-  static Route<PostCreateDto> route(User user) {
-    return MaterialPageRoute(builder: (context) => AddPostPage(user: user));
+class AddPostView extends StatefulWidget {
+  static Route<Post> route() {
+    return MaterialPageRoute(builder: (context) => const AddPostView());
   }
 
-  const AddPostPage({
-    Key? key,
-    required this.user,
-  }) : super(key: key);
-  final User user;
+  const AddPostView({Key? key}) : super(key: key);
+
   @override
-  State<AddPostPage> createState() => _AddPostPageState();
+  State<AddPostView> createState() => _AddPostViewState();
 }
 
-class _AddPostPageState extends State<AddPostPage> {
+class _AddPostViewState extends State<AddPostView> {
   Uint8List? _image;
   bool _uploading = false;
   late final _description = TextEditingController();
@@ -41,13 +41,16 @@ class _AddPostPageState extends State<AddPostPage> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.select((AuthCubit cubit) => cubit.user);
     return Scaffold(
       appBar: AppBar(
         title: const Text('새 게시물'),
         actions: [
           TextButton(
             child: const Text('공유'),
-            onPressed: _post,
+            onPressed: () {
+              _post(auth);
+            },
           ),
         ],
       ),
@@ -109,10 +112,10 @@ class _AddPostPageState extends State<AddPostPage> {
               children: [
                 CircleAvatar(
                   radius: 16,
-                  backgroundImage: networkImage(widget.user.photoUrl),
+                  backgroundImage: networkImage(auth.photoUrl),
                 ),
                 const SizedBox(width: 12),
-                Expanded(child: Text(widget.user.username)),
+                Expanded(child: Text(auth.username)),
                 const Switch(value: true, onChanged: null),
               ],
             ),
@@ -122,7 +125,7 @@ class _AddPostPageState extends State<AddPostPage> {
     );
   }
 
-  void _post() {
+  void _post(User auth) {
     if (_image == null) {
       showSnackbar(context, '사진을 선택을 해주세요.');
       return;
@@ -130,10 +133,11 @@ class _AddPostPageState extends State<AddPostPage> {
     setState(() {
       _uploading = true;
     });
-    final post = PostCreateDto(
+    final post = Post(
       description: _description.text,
-      file: _image!,
-      uid: widget.user.uid,
+      postImage: im.decodeImage(_image!),
+      uid: auth.uid,
+      date: DateTime.now(),
     );
 
     Navigator.pop(context, post);

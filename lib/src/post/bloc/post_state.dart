@@ -5,7 +5,6 @@ enum PostStatus {
   loading,
   success,
   failure,
-  creating,
 }
 
 class PostState extends Equatable {

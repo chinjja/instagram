@@ -15,11 +15,15 @@ class CommentProvider {
     required int limit,
     Comment? cursor,
   }) async {
+    Timestamp? timestamp;
+    if (cursor != null) {
+      timestamp = Timestamp.fromDate(cursor.date);
+    }
     final snapshot = await _firestore
         .collection('posts')
         .doc(postId)
         .collection('comments')
-        .where('date', isGreaterThan: cursor?.date)
+        .where('date', isGreaterThan: timestamp)
         .orderBy('date')
         .limit(limit)
         .get();
