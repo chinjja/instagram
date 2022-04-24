@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:instagram/src/auth/bloc/auth_cubit.dart';
+import 'package:instagram/src/home/cubit/home_cubit.dart';
 import 'package:instagram/src/repo/models/model.dart';
 import 'package:instagram/src/pages/message_page.dart';
 import 'package:instagram/src/pages/new_message_page.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/widgets/chat_card.dart';
 import 'package:provider/provider.dart';
-import 'package:rxdart/rxdart.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({Key? key, required this.user, required this.onHideChat})
-      : super(key: key);
-  final User user;
-  final void Function() onHideChat;
+  const ChatPage({Key? key}) : super(key: key);
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -22,15 +20,20 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = widget.user;
+    final user = context.select((AuthCubit cubit) => cubit.user);
+
     final chatsStream = _firestore.chats.chats(uid: user.uid);
     return Scaffold(
       appBar: AppBar(
-        leading: BackButton(onPressed: widget.onHideChat),
+        leading: BackButton(onPressed: () {
+          context.read<HomeCubit>().nav();
+        }),
         title: const Text('메시지'),
         actions: [
           IconButton(
-            onPressed: _newChat,
+            onPressed: () {
+              _newChat(user);
+            },
             icon: const Icon(Icons.add),
           )
         ],
@@ -60,7 +63,7 @@ class _ChatPageState extends State<ChatPage> {
                 chat: chat,
                 user: user,
                 onTap: () {
-                  _joinChat(chat);
+                  _joinChat(user, chat);
                 },
               );
             },
@@ -70,25 +73,25 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  void _newChat() {
+  void _newChat(User user) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => NewMessagePage(
-          currentUser: widget.user,
+          currentUser: user,
         ),
       ),
     );
   }
 
-  void _joinChat(Chat chat) {
+  void _joinChat(User user, Chat chat) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => MessagePage(
           group: chat.group,
           chat: chat,
-          currentUser: widget.user,
+          currentUser: user,
           autoFocus: true,
         ),
       ),

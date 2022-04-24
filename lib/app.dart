@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:instagram/src/auth/bloc/auth_cubit.dart';
 import 'package:instagram/src/auth/view/signin.dart';
-import 'package:instagram/src/home/home_page.dart';
+import 'package:instagram/src/home/view/home_page.dart';
 import 'package:instagram/src/utils/utils.dart';
 
 class App extends StatefulWidget {
@@ -23,7 +23,7 @@ class _AppState extends State<App> {
       listener: (context, state) {
         switch (state.status) {
           case AuthStatus.authenticated:
-            nav.pushAndRemoveUntil(HomeView.route(), (route) => false);
+            nav.pushAndRemoveUntil(HomePage.route(), (route) => false);
             break;
           case AuthStatus.unauthenticated:
             nav.pushAndRemoveUntil(SigninView.route(), (route) => false);
