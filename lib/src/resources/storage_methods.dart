@@ -42,7 +42,7 @@ class StorageMethods {
       );
     }
     final url = await uploadData(
-      Uint8List.fromList(encodeJpg(img, quality: 75)),
+      Uint8List.fromList(encodePng(img)),
       path,
       name,
     );
