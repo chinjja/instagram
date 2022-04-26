@@ -43,24 +43,42 @@ class CommentView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bloc = context.read<CommentCubit>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('댓글'),
       ),
-      body: BlocBuilder<CommentCubit, CommentState>(
-        builder: (context, state) {
-          switch (state.status) {
-            case CommentStatus.loading:
-              return const Center(child: CircularProgressIndicator());
-            case CommentStatus.success:
-              return RefreshIndicator(
-                  onRefresh: () => context.read<CommentCubit>().refresh(),
-                  child: CommentList(state: state));
-            case CommentStatus.failure:
-            default:
-              return const Center(child: Text('oops'));
-          }
-        },
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: BlocBuilder<CommentCubit, CommentState>(
+                builder: (context, state) {
+                  switch (state.status) {
+                    case CommentStatus.loading:
+                      return const Center(child: CircularProgressIndicator());
+                    case CommentStatus.success:
+                      return RefreshIndicator(
+                          onRefresh: () =>
+                              context.read<CommentCubit>().refresh(),
+                          child: CommentList(state: state));
+                    case CommentStatus.failure:
+                    default:
+                      return const Center(child: Text('oops'));
+                  }
+                },
+              ),
+            ),
+            SendTextField(
+              user: bloc.auth,
+              hintText: '댓글 달기...',
+              sendText: '게시',
+              onTap: (text) async {
+                bloc.create(text);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -106,39 +124,24 @@ class _CommentListState extends State<CommentList> {
   @override
   Widget build(BuildContext context) {
     final list = widget.state.list;
-    final bloc = context.read<CommentCubit>();
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            physics: const AlwaysScrollableScrollPhysics(),
-            controller: _controller,
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            itemCount: list.length + (widget.state.hasReachedMax ? 0 : 1) + 1,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return const CommentHeader();
-              }
-              if (index == list.length + 1) {
-                return const CommentLoading();
-              }
-              final data = list[index - 1];
-              return CommentCard(
-                key: Key(data.comment.commentId),
-                data: data,
-              );
-            },
-          ),
-        ),
-        SendTextField(
-          user: bloc.auth,
-          hintText: '댓글 달기...',
-          sendText: '게시',
-          onTap: (text) async {
-            bloc.create(text);
-          },
-        ),
-      ],
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      controller: _controller,
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      itemCount: list.length + (widget.state.hasReachedMax ? 0 : 1) + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return const CommentHeader();
+        }
+        if (index == list.length + 1) {
+          return const CommentLoading();
+        }
+        final data = list[index - 1];
+        return CommentCard(
+          key: Key(data.comment.commentId),
+          data: data,
+        );
+      },
     );
   }
 }

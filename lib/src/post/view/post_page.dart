@@ -84,9 +84,7 @@ class PostView extends StatelessWidget {
             case PostStatus.loading:
               return const PostLoading();
             case PostStatus.success:
-              return RefreshIndicator(
-                  onRefresh: () => context.read<PostCubit>().refresh(),
-                  child: PostList(state: state));
+              return PostList(state: state);
             case PostStatus.failure:
             default:
               return const PostError();

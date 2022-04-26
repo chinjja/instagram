@@ -125,6 +125,7 @@ class UserProvider {
     }
     log('update user: ${user.uid}');
     await _firestore.collection('users').doc(user.uid).update(data);
+    _cache.remove(user.uid);
     return model.User(
       email: user.email,
       uid: user.uid,

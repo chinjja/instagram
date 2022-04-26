@@ -26,8 +26,12 @@ class Activity extends Equatable {
     required this.data,
   });
 
-  factory Activity.fromJson(Map<String, dynamic> json) =>
-      _$ActivityFromJson(json);
+  factory Activity.fromJson(Map<String, dynamic> json) {
+    if (json['date'] == null) {
+      json['date'] = Timestamp.now();
+    }
+    return _$ActivityFromJson(json);
+  }
   Map<String, dynamic> toJson() => _$ActivityToJson(this);
 
   @override

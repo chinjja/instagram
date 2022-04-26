@@ -34,6 +34,7 @@ class CommentCubit extends Cubit<CommentState> {
   }
 
   Future<void> refresh() async {
+    emit(state.copyWith(status: CommentStatus.loading, list: []));
     final data = await _methods.comments.fetch(
       postId: post.postId,
       limit: limit,
@@ -47,35 +48,35 @@ class CommentCubit extends Cubit<CommentState> {
   }
 
   void fetch() async {
-    if (state.hasReachedMax) return;
-    if (_isFetching) {
-      return;
-    }
+    if (state.hasReachedMax || _isFetching) return;
     _isFetching = true;
 
     try {
       if (state.status == CommentStatus.initial) {
         postUser = (await _methods.users.get(uid: post.uid))!;
-        emit(state.copyWith(status: CommentStatus.loading));
         await refresh();
       } else if (state.list.isNotEmpty) {
-        final data = await _methods.comments.fetch(
-          postId: post.postId,
-          cursor: state.list.last.comment,
-          limit: limit,
-        );
-        final list = await _map(data);
-        emit(state.copyWith(
-          list: [
-            ...state.list,
-            ...list,
-          ],
-          hasReachedMax: list.length < limit,
-        ));
+        await _fetch(cursor: state.list.last.comment);
       }
     } finally {
       _isFetching = false;
     }
+  }
+
+  Future<void> _fetch({Comment? cursor}) async {
+    final data = await _methods.comments.fetch(
+      postId: post.postId,
+      cursor: cursor,
+      limit: limit,
+    );
+    final list = await _map(data);
+    emit(state.copyWith(
+      list: [
+        ...state.list,
+        ...list,
+      ],
+      hasReachedMax: list.length < limit,
+    ));
   }
 
   Future<List<CommentData>> _map(List<Comment> list) async {

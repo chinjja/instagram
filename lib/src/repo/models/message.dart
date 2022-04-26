@@ -22,8 +22,12 @@ class Message extends Equatable {
     required this.date,
   });
 
-  factory Message.fromJson(Map<String, dynamic> json) =>
-      _$MessageFromJson(json);
+  factory Message.fromJson(Map<String, dynamic> json) {
+    if (json['date'] == null) {
+      json['date'] = Timestamp.now();
+    }
+    return _$MessageFromJson(json);
+  }
   Map<String, dynamic> toJson() => _$MessageToJson(this);
 
   @override

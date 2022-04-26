@@ -91,38 +91,23 @@ class MessageProvider {
     return snapshot.docs.map((doc) => Message.fromJson(doc.data())).toList();
   }
 
-  QueryDocumentSnapshot? _latestDocument;
-  Future<List<Message>> first({
+  Future<List<Message>> fetch({
     required String chatId,
     required int limit,
+    Message? cursor,
   }) async {
-    final snapshot = await _firestore
-        .collection('chats')
-        .doc(chatId)
-        .collection('messages')
-        .orderBy('date', descending: true)
-        .limit(limit)
-        .get();
-    _latestDocument = snapshot.size == 0 ? null : snapshot.docs.last;
-    return snapshot.docs.map((doc) => Message.fromJson(doc.data())).toList();
-  }
-
-  Future<List<Message>> next({
-    required String chatId,
-    required int limit,
-  }) async {
-    if (_latestDocument == null) {
-      return first(chatId: chatId, limit: limit);
+    Timestamp? timestamp;
+    if (cursor != null) {
+      timestamp = Timestamp.fromDate(cursor.date);
     }
     final snapshot = await _firestore
         .collection('chats')
         .doc(chatId)
         .collection('messages')
+        .where('date', isLessThan: timestamp)
         .orderBy('date', descending: true)
-        .startAfterDocument(_latestDocument!)
         .limit(limit)
         .get();
-    _latestDocument = snapshot.size == 0 ? _latestDocument : snapshot.docs.last;
     return snapshot.docs.map((doc) => Message.fromJson(doc.data())).toList();
   }
 

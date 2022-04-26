@@ -16,8 +16,12 @@ class ChatUser extends Equatable {
     required this.date,
   });
 
-  factory ChatUser.fromJson(Map<String, dynamic> json) =>
-      _$ChatUserFromJson(json);
+  factory ChatUser.fromJson(Map<String, dynamic> json) {
+    if (json['date'] == null) {
+      json['date'] = Timestamp.now();
+    }
+    return _$ChatUserFromJson(json);
+  }
   Map<String, dynamic> toJson() => _$ChatUserToJson(this);
 
   @override

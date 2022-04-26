@@ -1,75 +1,25 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:instagram/src/auth/bloc/auth_cubit.dart';
+import 'package:instagram/src/chat/models/chat_data.dart';
 import 'package:instagram/src/repo/models/model.dart';
-import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-import 'package:rxdart/rxdart.dart';
-import 'package:tuple/tuple.dart';
 
-class ChatCard extends StatefulWidget {
+class ChatCard extends StatelessWidget {
   const ChatCard({
     Key? key,
-    required this.chat,
-    required this.user,
+    required this.data,
     required this.onTap,
   }) : super(key: key);
-  final Chat chat;
-  final User user;
+  final ChatData data;
   final void Function() onTap;
 
   @override
-  State<ChatCard> createState() => _ChatCardState();
-}
-
-class _ChatCardState extends State<ChatCard> {
-  late final _firestore = context.read<FirestoreMethods>();
-  Message? message;
-  ChatUser? chatUser;
-  StreamSubscription? subscription;
-  List<User>? users;
-
-  @override
-  void initState() {
-    super.initState();
-    subscription = Rx.combineLatest3(
-        _firestore.messages.latest(chatId: widget.chat.chatId),
-        _firestore.chats.user(chatId: widget.chat.chatId, uid: widget.user.uid),
-        _firestore.users.all(uids: widget.chat.users.take(4).toList()),
-        (Message? a, ChatUser b, List<User> c) =>
-            Tuple3(a, b, c)).listen((event) {
-      setState(() {
-        message = event.item1;
-        chatUser = event.item2;
-        users = event.item3;
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    subscription?.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final chat = widget.chat;
-    final members = chat.users;
-    final message = this.message;
-    final chatUser = this.chatUser;
-    late bool isNewMessage;
-    if (message != null && chatUser != null) {
-      isNewMessage = message.date.compareTo(chatUser.date) > 0;
-    } else {
-      isNewMessage = false;
-    }
-
-    final users = this.users ?? [];
+    final auth = context.select((AuthCubit cubit) => cubit.user);
     final userMap = <String, User>{};
-    for (final user in users) {
+    for (final user in data.members) {
       userMap[user.uid] = user;
     }
 
@@ -80,17 +30,17 @@ class _ChatCardState extends State<ChatCard> {
           children: [
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: _chatIcon(chat, members, userMap),
+              child: _chatIcon(data.chat, auth, userMap),
             ),
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _chatTitle(chat, members, userMap),
+                  _chatTitle(data.chat, auth, userMap),
                   const SizedBox(height: 4),
                   Text(
-                    message?.text.replaceAll(RegExp('\n'), ' ') ?? '',
+                    data.lastMessage.replaceAll(RegExp('\n'), ' '),
                     maxLines: 1,
                     overflow: TextOverflow.fade,
                   ),
@@ -102,16 +52,14 @@ class _ChatCardState extends State<ChatCard> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  DateFormat.yMd()
-                      .add_jm()
-                      .format(message?.date ?? DateTime.now()),
+                  DateFormat.yMd().add_jm().format(data.date),
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.grey,
                   ),
                 ),
                 Visibility(
-                  visible: isNewMessage,
+                  visible: data.isNew,
                   maintainState: true,
                   maintainAnimation: true,
                   maintainSize: true,
@@ -125,7 +73,7 @@ class _ChatCardState extends State<ChatCard> {
           ],
         ),
       ),
-      onTap: widget.onTap,
+      onTap: onTap,
     );
   }
 
@@ -154,11 +102,11 @@ class _ChatCardState extends State<ChatCard> {
     }
   }
 
-  Widget _chatIcon(Chat chat, List<String> users, Map<String, User> map) {
+  Widget _chatIcon(Chat chat, User auth, Map<String, User> map) {
     if (chat.group) {
-      return groupIcon(chat, users, map);
+      return groupIcon(chat, chat.users, map);
     } else {
-      final uid = oppositeItem(users, widget.user.uid);
+      final uid = oppositeItem(chat.users, auth.uid);
       final user = map[uid];
       return CircleAvatar(
         radius: 24,
@@ -210,11 +158,11 @@ class _ChatCardState extends State<ChatCard> {
     }
   }
 
-  Widget _chatTitle(Chat chat, List<String> users, Map<String, User> map) {
+  Widget _chatTitle(Chat chat, User auth, Map<String, User> map) {
     if (chat.group) {
-      return groupTitle(chat, users, map);
+      return groupTitle(chat, chat.users, map);
     } else {
-      final uid = oppositeItem(users, widget.user.uid);
+      final uid = oppositeItem(chat.users, auth.uid);
       final user = map[uid];
       return Text(
         user?.username ?? '',

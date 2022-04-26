@@ -28,7 +28,12 @@ class Chat extends Equatable {
     required this.date,
   });
 
-  factory Chat.fromJson(Map<String, dynamic> json) => _$ChatFromJson(json);
+  factory Chat.fromJson(Map<String, dynamic> json) {
+    if (json['date'] == null) {
+      json['date'] = Timestamp.now();
+    }
+    return _$ChatFromJson(json);
+  }
   Map<String, dynamic> toJson() => _$ChatToJson(this);
 
   @override

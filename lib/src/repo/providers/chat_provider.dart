@@ -67,7 +67,8 @@ class ChatProvider {
   Future<void> delete({required String chatId}) async {
     final batch = _firestore.batch();
     final doc = _firestore.collection('chats').doc(chatId);
-    FirestoreMethods.deleteCollection(batch, doc, 'users');
+    await FirestoreMethods.deleteCollection(batch, doc, 'users');
+    await FirestoreMethods.deleteCollection(batch, doc, 'messages');
     batch.delete(doc);
 
     log('delete chat: $chatId');
@@ -157,7 +158,7 @@ class ChatProvider {
         .doc(uid)
         .get();
 
-    return snapshot.exists ? null : ChatUser.fromJson(snapshot.data()!);
+    return !snapshot.exists ? null : ChatUser.fromJson(snapshot.data()!);
   }
 
   Future<ChatUser> addUser({
@@ -181,7 +182,6 @@ class ChatProvider {
   }) {
     final user = ChatUser(uid: uid, date: DateTime.now());
     final data = user.toJson();
-    print(data);
     data['date'] = FieldValue.serverTimestamp();
 
     log('add user to chat: $uid');

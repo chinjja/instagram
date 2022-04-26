@@ -1,40 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:instagram/src/auth/bloc/auth_cubit.dart';
+import 'package:instagram/src/message/models/message_data.dart';
 import 'package:instagram/src/repo/models/model.dart';
 import 'package:instagram/src/pages/profile_page.dart';
-import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
 import 'package:provider/provider.dart';
 
 class MessageCard extends StatefulWidget {
   const MessageCard({
     Key? key,
-    required this.sender,
-    required this.userMap,
     required this.prevMessage,
     required this.message,
   }) : super(key: key);
-  final User sender;
-  final Map<String, User> userMap;
-  final Message? prevMessage;
-  final Message message;
+  final MessageData? prevMessage;
+  final MessageData message;
   @override
   State<MessageCard> createState() => _MessageCardState();
 }
 
 class _MessageCardState extends State<MessageCard> {
-  late final _firestore = context.read<FirestoreMethods>();
-
   @override
   Widget build(BuildContext context) {
+    final auth = context.select((AuthCubit cubit) => cubit.user);
+
     final prevMessage = widget.prevMessage;
     final message = widget.message;
 
-    final user = widget.userMap[message.uid];
-    final photoUrl = user?.photoUrl;
-    final username = user?.username ?? '';
-    final isMe = message.uid == widget.sender.uid;
+    final user = message.user;
+    final photoUrl = user.photoUrl;
+    final username = user.username;
+    final isMe = message.user == auth;
     final showDeco =
-        !isMe && (prevMessage == null || prevMessage.uid != message.uid);
+        !isMe && (prevMessage == null || prevMessage.user != message.user);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -46,11 +43,9 @@ class _MessageCardState extends State<MessageCard> {
             child: Visibility(
               visible: showDeco,
               child: GestureDetector(
-                onTap: user == null
-                    ? null
-                    : () {
-                        _showProfile(user);
-                      },
+                onTap: () {
+                  _showProfile(user);
+                },
                 child: CircleAvatar(
                   radius: 18,
                   backgroundImage: networkImage(photoUrl),
@@ -84,7 +79,7 @@ class _MessageCardState extends State<MessageCard> {
                       ),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 10),
-                      child: Text(message.text),
+                      child: Text(message.message.text),
                     ),
                   ),
                 ],

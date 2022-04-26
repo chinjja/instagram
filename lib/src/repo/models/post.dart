@@ -39,7 +39,12 @@ class Post extends Equatable {
         postId = postId ?? const Uuid().v4(),
         aspectRatio = aspectRatio ?? (postImage!.width / postImage.height);
 
-  factory Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(json);
+  factory Post.fromJson(Map<String, dynamic> json) {
+    if (json['date'] == null) {
+      json['date'] = Timestamp.now();
+    }
+    return _$PostFromJson(json);
+  }
   Map<String, dynamic> toJson() => _$PostToJson(this);
 
   Post copyWith({

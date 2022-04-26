@@ -4,8 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:instagram/src/auth/bloc/auth_cubit.dart';
 import 'package:instagram/src/bookmark/view/bookmark_page.dart';
 import 'package:instagram/src/home/cubit/home_cubit.dart';
-import 'package:instagram/src/pages/activity_page.dart';
-import 'package:instagram/src/pages/chat_page.dart';
+import 'package:instagram/src/activity/view/activity_page.dart';
+import 'package:instagram/src/chat/view/chat_page.dart';
 import 'package:instagram/src/pages/profile_page.dart';
 import 'package:instagram/src/pages/search_page.dart';
 import 'package:instagram/src/post/view/view.dart';
@@ -118,14 +118,8 @@ class _NavViewState extends State<NavView> {
                 ),
               ),
               const KeepAliveWidget(child: SearchPage()),
-              KeepAliveWidget(
-                child: ActivityPage(
-                  currentUser: auth,
-                ),
-              ),
-              const KeepAliveWidget(
-                child: BookmarkPage(),
-              ),
+              const KeepAliveWidget(child: ActivityPage()),
+              const KeepAliveWidget(child: BookmarkPage()),
               KeepAliveWidget(
                 child: ProfilePage(
                   user: auth,

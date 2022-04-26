@@ -91,6 +91,7 @@ class PostProvider {
     likes.set(batch,
         uid: post.uid, postId: post.postId, value: false, ignoreCount: true);
     bookmarks.set(batch, uid: post.uid, postId: post.postId, value: false);
+    activities.clear(batch, postId: post.postId);
     batch.delete(_firestore.collection('posts').doc(post.postId));
     await batch.commit();
     await storage.delete('posts', post.postId);
@@ -157,6 +158,7 @@ class PostProvider {
         type: 'comment',
         data: {
           'postUrl': post.postUrl,
+          'text': text,
         });
     await batch.commit();
     return comment;

@@ -13,7 +13,7 @@ class BookmarkCubit extends Cubit<BookmarkState> {
     required this.auth,
   })  : _methods = methods,
         super(const BookmarkState());
-  final limit = 5;
+  final limit = 6;
   final FirestoreMethods _methods;
   final User auth;
 

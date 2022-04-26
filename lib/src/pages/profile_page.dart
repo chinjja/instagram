@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:instagram/src/auth/bloc/auth_cubit.dart';
+import 'package:instagram/src/message/models/chat_info.dart';
 import 'package:instagram/src/post/view/post_page.dart';
 import 'package:instagram/src/repo/models/model.dart';
 import 'package:instagram/src/pages/edit_profile_page.dart';
 import 'package:instagram/src/pages/follower_page.dart';
-import 'package:instagram/src/pages/message_page.dart';
+import 'package:instagram/src/message/view/message_page.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
 import 'package:provider/provider.dart';
@@ -29,6 +30,7 @@ class _ProfilePageState extends State<ProfilePage> {
   late User user = widget.user;
   late var followers = user.followers;
   late var following = user.following;
+  late final postStream = _firestore.posts.fetch(byUser: user, limit: 12);
 
   Future<void> _refresh() async {
     final value = await _firestore.users.get(uid: user.uid);
@@ -43,8 +45,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final postStream = _firestore.posts.fetch(byUser: user, limit: 10);
-
     final currentUid = _firestore.users.currentUid;
     final isOnwer = user.uid == currentUid;
     final isFollower = followers.contains(currentUid);
@@ -255,9 +255,12 @@ class _ProfilePageState extends State<ProfilePage> {
             onTap: () {
               _feed(user);
             },
-            child: Image.network(
-              post.postUrl!,
-              fit: BoxFit.cover,
+            child: Container(
+              color: Colors.black,
+              child: Image.network(
+                post.postUrl!,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
         );
@@ -336,9 +339,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     ) as User?;
     if (value != null) {
-      setState(() {
-        user = value;
-      });
+      _refresh();
     }
   }
 
@@ -400,17 +401,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _message(User user) async {
-    final currentUser = await _firestore.users.getCurrentUser();
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (context) => MessagePage(
-          group: false,
-          currentUser: currentUser,
-          others: [user.uid],
-          autoFocus: true,
-        ),
-      ),
+      MessagePage.route(info: ChatInfo(group: false, others: [user])),
       (route) => route.settings.name == '/',
     );
   }

@@ -1,49 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:instagram/src/activity/bloc/activity_bloc.dart';
+import 'package:instagram/src/activity/models/activity_data.dart';
 import 'package:instagram/src/post/view/post_page.dart';
 import 'package:instagram/src/repo/models/model.dart';
-import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/utils/utils.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-class ActivityCard extends StatefulWidget {
+class ActivityCard extends StatelessWidget {
   const ActivityCard({
     Key? key,
-    required this.activity,
+    required this.data,
   }) : super(key: key);
 
-  final Activity activity;
-
-  @override
-  State<ActivityCard> createState() => _ActivityCardState();
-}
-
-class _ActivityCardState extends State<ActivityCard> {
-  late final _firestore = context.read<FirestoreMethods>();
-  User? user;
-
-  @override
-  void initState() {
-    super.initState();
-    _refresh();
-  }
-
-  Future<void> _refresh() async {
-    final value = await _firestore.users.get(uid: widget.activity.fromUid);
-    setState(() {
-      user = value;
-    });
-  }
+  final ActivityData data;
 
   @override
   Widget build(BuildContext context) {
-    final postId = widget.activity.postId;
-    final postUrl = widget.activity.data['postUrl'];
+    final postId = data.activity.postId;
+    final postUrl = data.activity.data['postUrl'];
 
-    final activity = widget.activity;
+    final activity = data.activity;
+    final user = data.fromUid;
     return ListTile(
-      leading: _circleNetwork(user?.photoUrl),
-      title: _makeTitle(user, activity),
+      leading: _circleNetwork(user.photoUrl),
+      title: _makeTitle(context, user, activity),
       subtitle: activity.type == 'comment'
           ? const Text(
               '답글 달기',
@@ -53,16 +34,14 @@ class _ActivityCardState extends State<ActivityCard> {
             )
           : null,
       trailing: _network(postUrl),
-      onTap: user == null
-          ? null
-          : () async {
-              final post = await _firestore.posts.get(postId: postId);
-              if (post != null) {
-                Navigator.push(context, PostPage.route(fixed: [post]));
-              } else {
-                showSnackbar(context, '해당 포스트가 조재하지 않습니다.');
-              }
-            },
+      onTap: () async {
+        final post = await context.read<ActivityBloc>().getPost(postId: postId);
+        if (post != null) {
+          Navigator.push(context, PostPage.route(fixed: [post]));
+        } else {
+          showSnackbar(context, '해당 포스트가 조재하지 않습니다.');
+        }
+      },
     );
   }
 
@@ -89,7 +68,7 @@ class _ActivityCardState extends State<ActivityCard> {
     }
   }
 
-  Widget _makeTitle(User? user, Activity activity) {
+  Widget _makeTitle(BuildContext context, User user, Activity activity) {
     String text;
     if (activity.type == 'like') {
       text = '님이 게시물을 좋아합니다. ';
@@ -102,7 +81,7 @@ class _ActivityCardState extends State<ActivityCard> {
     }
     return RichText(
       text: TextSpan(
-        text: '${user?.username}',
+        text: user.username,
         style: Theme.of(context)
             .textTheme
             .bodyText1

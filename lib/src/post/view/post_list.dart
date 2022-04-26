@@ -43,24 +43,30 @@ class _PostListState extends State<PostList> {
   @override
   Widget build(BuildContext context) {
     final posts = widget.state.posts;
-    if (posts.isEmpty) {
-      return const Center(child: Text('포스트가 없습니다.'));
-    }
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      controller: _controller,
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      itemCount: posts.length + (widget.state.hasReachedMax ? 0 : 1),
-      itemBuilder: (context, index) {
-        if (index == posts.length) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final post = posts[index];
-        return PostCard(
-          key: Key(post.post.postId),
-          post: post,
-        );
-      },
+
+    return RefreshIndicator(
+      onRefresh: () => context.read<PostCubit>().refresh(),
+      child: Stack(
+        children: [
+          ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            controller: _controller,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            itemCount: posts.length + (widget.state.hasReachedMax ? 0 : 1),
+            itemBuilder: (context, index) {
+              if (index == posts.length) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final post = posts[index];
+              return PostCard(
+                key: Key(post.post.postId),
+                post: post,
+              );
+            },
+          ),
+          if (posts.isEmpty) const Center(child: Text('포스트가 없습니다.')),
+        ],
+      ),
     );
   }
 }

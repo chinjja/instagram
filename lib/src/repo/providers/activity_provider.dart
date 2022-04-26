@@ -7,16 +7,19 @@ import 'package:uuid/uuid.dart';
 class ActivityProvider {
   final _firestore = FirebaseFirestore.instance;
 
-  Future<List<Activity>> list({
+  Future<List<Activity>> fetch({
     required String toUid,
     required int limit,
-    Timestamp? start,
-    Timestamp? end,
+    Activity? cursor,
   }) async {
+    Timestamp? timestamp;
+    if (cursor != null) {
+      timestamp = Timestamp.fromDate(cursor.date);
+    }
     final snapshot = await _firestore
         .collection('activities')
-        .where('date', isLessThanOrEqualTo: start)
-        .where('date', isGreaterThan: end)
+        .where('date', isLessThan: timestamp)
+        .orderBy('date', descending: true)
         .limit(limit)
         .get();
     return snapshot.docs.map((e) => Activity.fromJson(e.data())).toList();

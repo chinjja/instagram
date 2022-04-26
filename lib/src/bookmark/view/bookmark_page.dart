@@ -82,49 +82,56 @@ class BookmarkList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bloc = context.read<BookmarkCubit>();
-    final auth = context.read<AuthCubit>().user;
     return RefreshIndicator(
       onRefresh: () async {
         return context.read<BookmarkCubit>().refresh();
       },
-      child: GridView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          mainAxisSpacing: 1,
-          crossAxisSpacing: 1,
-          maxCrossAxisExtent: 150,
-        ),
-        itemCount: state.list.length + (state.hasReachedMax ? 0 : 1),
-        itemBuilder: (context, index) {
-          if (index == state.list.length) {
-            if (state.status == BookmarkStatus.fetching) {
-              return const Center(child: CircularProgressIndicator());
-            } else {
-              return TextButton(
-                onPressed: () {
-                  bloc.fetch();
-                },
-                child: const Text('더보기'),
-              );
-            }
-          }
-          final bookmark = state.list[index];
-          return GestureDetector(
-            key: ValueKey(bookmark.postId),
-            onTap: () async {
-              final post = await bloc.getPost(bookmark);
-              if (post != null) {
-                Navigator.push(context, PostPage.route(fixed: [post]));
-              } else {
-                showSnackbar(context, '해당 포스트가 조재하지 않습니다.');
-              }
-            },
-            child: Image.network(
-              bookmark.postUrl,
-              fit: BoxFit.cover,
+      child: Stack(
+        children: [
+          GridView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              mainAxisSpacing: 1,
+              crossAxisSpacing: 1,
+              maxCrossAxisExtent: 150,
             ),
-          );
-        },
+            itemCount: state.list.length + (state.hasReachedMax ? 0 : 1),
+            itemBuilder: (context, index) {
+              if (index == state.list.length) {
+                if (state.status == BookmarkStatus.fetching) {
+                  return const Center(child: CircularProgressIndicator());
+                } else {
+                  return TextButton(
+                    onPressed: () {
+                      bloc.fetch();
+                    },
+                    child: const Text('더보기'),
+                  );
+                }
+              }
+              final bookmark = state.list[index];
+              return GestureDetector(
+                key: Key(bookmark.postId),
+                onTap: () async {
+                  final post = await bloc.getPost(bookmark);
+                  if (post != null) {
+                    Navigator.push(context, PostPage.route(fixed: [post]));
+                  } else {
+                    showSnackbar(context, '해당 포스트가 조재하지 않습니다.');
+                  }
+                },
+                child: Container(
+                  color: Colors.black,
+                  child: Image.network(
+                    bookmark.postUrl,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              );
+            },
+          ),
+          if (state.list.isEmpty) const Center(child: Text('북마크가 없습니다.'))
+        ],
       ),
     );
   }

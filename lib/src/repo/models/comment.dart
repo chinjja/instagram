@@ -22,8 +22,12 @@ class Comment extends Equatable {
     required this.text,
   });
 
-  factory Comment.fromJson(Map<String, dynamic> json) =>
-      _$CommentFromJson(json);
+  factory Comment.fromJson(Map<String, dynamic> json) {
+    if (json['date'] == null) {
+      json['date'] = Timestamp.now();
+    }
+    return _$CommentFromJson(json);
+  }
   Map<String, dynamic> toJson() => _$CommentToJson(this);
 
   @override
