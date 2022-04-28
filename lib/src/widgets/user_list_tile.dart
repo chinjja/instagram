@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:instagram/src/repo/models/model.dart';
-import 'package:instagram/src/pages/profile_page.dart';
+import 'package:instagram/src/user/view/user_page.dart';
 import 'package:instagram/src/utils/utils.dart';
 
 class UserListTile extends StatelessWidget {
@@ -30,9 +30,7 @@ class UserListTile extends StatelessWidget {
           () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => ProfilePage(user: user),
-              ),
+              UserPage.route(user: user),
             );
           },
     );

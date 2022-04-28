@@ -5,9 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image/image.dart' as im;
 import 'package:instagram/src/auth/bloc/auth_cubit.dart';
 import 'package:instagram/src/comment/view/comment_page.dart';
-import 'package:instagram/src/pages/profile_page.dart';
 import 'package:instagram/src/post/bloc/post_cubit.dart';
 import 'package:instagram/src/post/models/models.dart';
+import 'package:instagram/src/user/view/user_page.dart';
 import 'package:instagram/src/utils/utils.dart';
 import 'package:intl/intl.dart';
 
@@ -42,9 +42,7 @@ class PostCard extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => ProfilePage(user: post.user!),
-                  ),
+                  UserPage.route(user: post.user!),
                 );
               },
               child: Padding(

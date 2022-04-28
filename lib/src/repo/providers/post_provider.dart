@@ -54,7 +54,7 @@ class PostProvider {
     return null;
   }
 
-  Future<Post> save(Post obj) async {
+  Future<Post> add(Post obj) async {
     final photo = await storage.uploadImageData(
       Uint8List.fromList(encodePng(obj.postImage!)),
       'posts',
@@ -68,6 +68,10 @@ class PostProvider {
     final data = obj.toJson();
     data['date'] = FieldValue.serverTimestamp();
     batch.set(post, data);
+
+    batch.update(_firestore.collection('users').doc(obj.uid), {
+      'postCount': FieldValue.increment(1),
+    });
 
     log('add post: ${obj.postId}');
     await batch.commit();
@@ -92,6 +96,10 @@ class PostProvider {
         uid: post.uid, postId: post.postId, value: false, ignoreCount: true);
     bookmarks.set(batch, uid: post.uid, postId: post.postId, value: false);
     activities.clear(batch, postId: post.postId);
+
+    batch.update(_firestore.collection('users').doc(post.uid), {
+      'postCount': FieldValue.increment(-1),
+    });
     batch.delete(_firestore.collection('posts').doc(post.postId));
     await batch.commit();
     await storage.delete('posts', post.postId);

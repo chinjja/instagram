@@ -60,7 +60,7 @@ class PostView extends StatelessWidget {
     final bloc = context.read<PostCubit>();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Instagram'),
+        title: bloc.showActions ? const Text('Instagram') : null,
         actions: !bloc.showActions
             ? null
             : [

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:instagram/src/auth/bloc/auth_cubit.dart';
@@ -29,6 +30,14 @@ class BookmarkView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('저장됨'),
+        actions: [
+          if (kIsWeb)
+            IconButton(
+                onPressed: () {
+                  context.read<BookmarkCubit>().refresh();
+                },
+                icon: const Icon(Icons.refresh)),
+        ],
       ),
       body: SafeArea(child: BlocBuilder<BookmarkCubit, BookmarkState>(
         builder: (context, state) {

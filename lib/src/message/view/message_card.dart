@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:instagram/src/auth/bloc/auth_cubit.dart';
 import 'package:instagram/src/message/models/message_data.dart';
 import 'package:instagram/src/repo/models/model.dart';
-import 'package:instagram/src/pages/profile_page.dart';
+import 'package:instagram/src/user/view/user_page.dart';
 import 'package:instagram/src/utils/utils.dart';
 import 'package:provider/provider.dart';
 
@@ -94,9 +94,7 @@ class _MessageCardState extends State<MessageCard> {
   void _showProfile(User user) async {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => ProfilePage(user: user),
-      ),
+      UserPage.route(user: user),
     );
   }
 }

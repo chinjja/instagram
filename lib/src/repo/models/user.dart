@@ -13,7 +13,7 @@ class User extends Equatable {
   final String? website;
   final String? photoUrl;
   final List<String> following;
-  final List<String> followers;
+  final int postCount;
 
   const User({
     required this.email,
@@ -23,16 +23,8 @@ class User extends Equatable {
     this.state,
     this.website,
     required this.following,
-    required this.followers,
+    required this.postCount,
   });
-
-  bool isFollowers({required String uid}) {
-    return followers.contains(uid);
-  }
-
-  bool isFollowing({required String uid}) {
-    return following.contains(uid);
-  }
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
   Map<String, dynamic> toJson() => _$UserToJson(this);
@@ -46,6 +38,6 @@ class User extends Equatable {
         website,
         photoUrl,
         following,
-        followers,
+        postCount,
       ];
 }

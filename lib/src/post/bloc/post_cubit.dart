@@ -67,7 +67,7 @@ class PostCubit extends Cubit<PostState> {
     ];
     emit(state.copyWith(status: PostStatus.success, posts: copy));
 
-    final data = await get(await _methods.posts.save(post));
+    final data = await get(await _methods.posts.add(post));
     final index = state.posts.indexWhere((p) => p.post.postId == post.postId);
     final copy2 = [...state.posts];
     copy2[index] = data;
