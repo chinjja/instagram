@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,6 +10,8 @@ import 'package:instagram/src/resources/storage_methods.dart';
 import 'package:rxdart/rxdart.dart';
 
 class UserProvider {
+  static const maxDistribution = 5;
+
   UserProvider({
     required this.storage,
   });
@@ -23,17 +26,15 @@ class UserProvider {
 
   String get currentUid => FirebaseAuth.instance.currentUser!.uid;
 
-  Future<List<model.User>> search({
-    required String username,
-    required int limit,
-  }) async {
-    final snapshot = await _firestore
-        .collection('users')
-        .where('username', isGreaterThanOrEqualTo: username)
-        .limit(limit)
-        .get();
+  Future<List<model.User>> list() async {
+    final snapshot = await _firestore.collection('users').get();
 
-    return snapshot.docs.map((e) => model.User.fromJson(e.data())).toList();
+    final list =
+        snapshot.docs.map((e) => model.User.fromJson(e.data())).toList();
+    for (final user in list) {
+      _cache[user.uid] = user;
+    }
+    return list;
   }
 
   Stream<List<model.User>> all({required List<String> uids}) {
@@ -51,9 +52,9 @@ class UserProvider {
             .doOnError((_, e) => log(e.toString())));
   }
 
-  Future<model.User?> get({required String uid}) async {
+  Future<model.User?> get({required String uid, bool force = false}) async {
     final user = _cache[uid];
-    if (user != null) return user;
+    if (!force && user != null) return user;
     final snapshot = await _firestore.collection('users').doc(uid).get();
     if (snapshot.exists) {
       return _cache[uid] = model.User.fromJson(snapshot.data()!);
@@ -72,30 +73,95 @@ class UserProvider {
         .doOnError((_, e) => log(e.toString()));
   }
 
-  Future<void> follow({
+  Future<bool> toggleFollowing({
     required String uid,
     required String to,
-    required bool follow,
   }) async {
     final batch = _firestore.batch();
-    if (follow) {
+    final follow = await isFollowers(uid: uid, to: to);
+    if (!follow) {
       log('unfollow user: $uid -> $to');
       batch.update(_firestore.collection('users').doc(uid), {
         'following': FieldValue.arrayUnion([to]),
       });
-      batch.update(_firestore.collection('users').doc(to), {
-        'followers': FieldValue.arrayUnion([uid]),
-      });
+      batch.set(
+          _firestore
+              .collection('users')
+              .doc(to)
+              .collection('followers')
+              .doc(uid),
+          {
+            'uid': uid,
+          });
+      batch.set(
+          _firestore
+              .collection('users')
+              .doc(to)
+              .collection('followers-count')
+              .doc(math.Random().nextInt(maxDistribution).toString()),
+          {'count': FieldValue.increment(1)},
+          SetOptions(merge: true));
     } else {
       log('follow user: $uid -> $to');
       batch.update(_firestore.collection('users').doc(uid), {
         'following': FieldValue.arrayRemove([to]),
       });
-      batch.update(_firestore.collection('users').doc(to), {
-        'followers': FieldValue.arrayRemove([uid]),
-      });
+      batch.delete(_firestore
+          .collection('users')
+          .doc(to)
+          .collection('followers')
+          .doc(uid));
+      batch.set(
+          _firestore
+              .collection('users')
+              .doc(to)
+              .collection('followers-count')
+              .doc(math.Random().nextInt(maxDistribution).toString()),
+          {'count': FieldValue.increment(-1)},
+          SetOptions(merge: true));
     }
     await batch.commit();
+    return !follow;
+  }
+
+  Future<bool> isFollowers({
+    required String uid,
+    required String to,
+  }) async {
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(to)
+        .collection('followers')
+        .doc(uid)
+        .get();
+    return snapshot.exists;
+  }
+
+  Future<List<String>> fetchFollowers(
+      {required String uid, required int limit, User? cursor}) async {
+    final followers = await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('followers')
+        .where('uid', isGreaterThan: cursor?.uid)
+        .orderBy('uid')
+        .limit(limit)
+        .get();
+
+    return followers.docs.map((e) => e['uid'] as String).toList();
+  }
+
+  Future<int> getFollowersCount({required String uid}) async {
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('followers-count')
+        .get();
+    int count = 0;
+    for (final doc in snapshot.docs) {
+      count += doc['count'] as int;
+    }
+    return count;
   }
 
   Future<model.User> update(
@@ -126,14 +192,16 @@ class UserProvider {
     log('update user: ${user.uid}');
     await _firestore.collection('users').doc(user.uid).update(data);
     _cache.remove(user.uid);
+
     return model.User(
       email: user.email,
       uid: user.uid,
+      photoUrl: data['photoUrl'] ?? user.photoUrl,
       username: data['username'] ?? user.username,
       state: data['state'] ?? user.state,
       website: data['website'] ?? user.website,
       following: [...user.following],
-      followers: [...user.followers],
+      postCount: user.postCount,
     );
   }
 
@@ -153,8 +221,8 @@ class UserProvider {
             uid: user.uid,
             photoUrl: user.photoURL,
             username: user.displayName ?? user.email!,
-            following: [],
-            followers: [],
+            following: const [],
+            postCount: 0,
           ).toJson());
 
       await batch.commit();

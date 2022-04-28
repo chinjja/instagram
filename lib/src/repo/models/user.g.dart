@@ -15,8 +15,7 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
       website: json['website'] as String?,
       following:
           (json['following'] as List<dynamic>).map((e) => e as String).toList(),
-      followers:
-          (json['followers'] as List<dynamic>).map((e) => e as String).toList(),
+      postCount: json['postCount'] as int,
     );
 
 Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
@@ -27,5 +26,5 @@ Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
       'website': instance.website,
       'photoUrl': instance.photoUrl,
       'following': instance.following,
-      'followers': instance.followers,
+      'postCount': instance.postCount,
     };

@@ -15,12 +15,10 @@ class AddChatBloc extends Bloc<AddChatEvent, AddChatState> {
       (event, emit) async {
         emit(state.copyWith(status: AddChatStatus.loading));
         try {
-          final auth = event.auth;
-          final bi = auth.following.toSet();
-          bi.retainAll(auth.followers);
-          bi.remove(auth.uid);
+          final auth =
+              await _methods.users.get(uid: event.auth.uid, force: true);
           final friends = <User>[];
-          for (final friend in bi) {
+          for (final friend in auth?.following ?? <String>[]) {
             final user = await _methods.users.get(uid: friend);
             if (user != null) {
               friends.add(user);

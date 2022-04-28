@@ -6,9 +6,9 @@ import 'package:instagram/src/bookmark/view/bookmark_page.dart';
 import 'package:instagram/src/home/cubit/home_cubit.dart';
 import 'package:instagram/src/activity/view/activity_page.dart';
 import 'package:instagram/src/chat/view/chat_page.dart';
-import 'package:instagram/src/pages/profile_page.dart';
-import 'package:instagram/src/pages/search_page.dart';
+import 'package:instagram/src/search/view/search_page.dart';
 import 'package:instagram/src/post/view/view.dart';
+import 'package:instagram/src/user/view/user_page.dart';
 import 'package:instagram/src/widgets/keep_alive_widget.dart';
 
 class HomePage extends StatelessWidget {
@@ -121,7 +121,7 @@ class _NavViewState extends State<NavView> {
               const KeepAliveWidget(child: ActivityPage()),
               const KeepAliveWidget(child: BookmarkPage()),
               KeepAliveWidget(
-                child: ProfilePage(
+                child: UserPage(
                   user: auth,
                 ),
               ),

@@ -59,8 +59,6 @@ class AddChatView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.select((AuthCubit cubit) => cubit.user);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('새 메시지'),
@@ -84,7 +82,7 @@ class AddChatView extends StatelessWidget {
             case AddChatStatus.success:
               if (state.friends.isEmpty) {
                 return const Center(
-                  child: Text('친구가 없습니다. 맞-팔로우를 하세요.'),
+                  child: Text('친구가 없습니다. 팔로잉을 하세요.'),
                 );
               } else {
                 return ListView.builder(
@@ -96,7 +94,7 @@ class AddChatView extends StatelessWidget {
                     final value = state.selected.contains(friend);
                     return UserListTile(
                       key: Key(friend.uid),
-                      user: auth,
+                      user: friend,
                       trailing: IgnorePointer(
                         child: Checkbox(
                           value: value,

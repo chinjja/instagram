@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:instagram/src/repo/models/model.dart';
-import 'package:instagram/src/pages/profile_page.dart';
+import 'package:instagram/src/user/view/user_page.dart';
 import 'package:instagram/src/utils/utils.dart';
 import 'package:intl/intl.dart';
 
@@ -79,9 +79,7 @@ class CommentBaseCard extends StatelessWidget {
   void _showProfile(BuildContext context, User user) async {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => ProfilePage(user: user),
-      ),
+      UserPage.route(user: user),
     );
   }
 }
