@@ -68,6 +68,8 @@ class MessageView extends StatelessWidget {
                   switch (state.status) {
                     case MessageStatus.success:
                       return MessageList(state: state);
+                    case MessageStatus.loading:
+                      return const Center(child: CircularProgressIndicator());
                     default:
                       return const SizedBox();
                   }

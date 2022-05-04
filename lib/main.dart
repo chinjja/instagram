@@ -37,7 +37,6 @@ void main() async {
 
 final _storage = StorageMethods();
 final _commentProvider = CommentProvider();
-final _messages = MessageProvider(storage: _storage);
 final _userProvider = UserProvider(storage: _storage);
 final _bookmarkProvider = BookmarkProvider();
 final _likeProvider = LikeProvider();
@@ -54,7 +53,7 @@ final _firestore = FirestoreMethods(
   likes: _likeProvider,
   comments: _commentProvider,
   activities: _activityProvider,
-  chats: ChatProvider(storage: _storage, messages: _messages),
-  messages: _messages,
+  chats: ChatProvider(),
+  messages: MessageProvider(),
   bookmarks: _bookmarkProvider,
 );

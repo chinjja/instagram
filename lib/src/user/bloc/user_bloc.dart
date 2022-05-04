@@ -12,10 +12,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   var _isFetching = false;
 
   UserBloc(
-    FirestoreMethods methods, {
+    this._methods, {
     required User auth,
-  })  : _methods = methods,
-        super(UserState(auth: auth)) {
+  }) : super(UserState(auth: auth)) {
     on<UserLoaded>(
       (event, emit) async {
         if (state.status != UserStatus.initial) return;

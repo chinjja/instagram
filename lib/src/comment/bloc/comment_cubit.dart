@@ -9,11 +9,10 @@ part 'comment_state.dart';
 
 class CommentCubit extends Cubit<CommentState> {
   CommentCubit(
-    FirestoreMethods methods, {
+    this._methods, {
     required this.auth,
     required this.post,
-  })  : _methods = methods,
-        super(const CommentState());
+  }) : super(const CommentState());
   final limit = 15;
   final FirestoreMethods _methods;
   final User auth;

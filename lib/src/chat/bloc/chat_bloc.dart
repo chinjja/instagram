@@ -14,10 +14,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final FirestoreMethods _methods;
 
   ChatBloc(
-    FirestoreMethods methods, {
+    this._methods, {
     required this.auth,
-  })  : _methods = methods,
-        super(const ChatState()) {
+  }) : super(const ChatState()) {
     on<ChatSubscriptionRequested>(
       (event, emit) {
         emit(state.copyWith(status: ChatStatus.loading));

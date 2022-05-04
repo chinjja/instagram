@@ -9,13 +9,12 @@ part 'post_state.dart';
 
 class PostCubit extends Cubit<PostState> {
   PostCubit(
-    FirestoreMethods methods, {
+    this._methods, {
     required this.auth,
     this.byUser,
     this.showActions = false,
     this.fixed,
-  })  : _methods = methods,
-        super(const PostState());
+  }) : super(const PostState());
   final limit = 3;
   final FirestoreMethods _methods;
   final List<Post>? fixed;

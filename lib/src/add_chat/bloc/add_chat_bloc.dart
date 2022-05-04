@@ -8,9 +8,7 @@ part 'add_chat_state.dart';
 
 class AddChatBloc extends Bloc<AddChatEvent, AddChatState> {
   final FirestoreMethods _methods;
-  AddChatBloc(FirestoreMethods methods)
-      : _methods = methods,
-        super(const AddChatState()) {
+  AddChatBloc(this._methods) : super(const AddChatState()) {
     on<AddChatFetchRequested>(
       (event, emit) async {
         emit(state.copyWith(status: AddChatStatus.loading));

@@ -9,10 +9,9 @@ part 'bookmark_state.dart';
 
 class BookmarkCubit extends Cubit<BookmarkState> {
   BookmarkCubit(
-    FirestoreMethods methods, {
+    this._methods, {
     required this.auth,
-  })  : _methods = methods,
-        super(const BookmarkState());
+  }) : super(const BookmarkState());
   final limit = 6;
   final FirestoreMethods _methods;
   final User auth;

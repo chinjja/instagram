@@ -8,9 +8,7 @@ part 'search_state.dart';
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
   final FirestoreMethods _methods;
-  SearchBloc(FirestoreMethods methods)
-      : _methods = methods,
-        super(const SearchState()) {
+  SearchBloc(this._methods) : super(const SearchState()) {
     on<SearchUsernameChanged>(
       (event, emit) {
         emit(state.copyWith(username: event.username));

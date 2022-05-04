@@ -11,9 +11,7 @@ import 'package:instagram/src/resources/firestore_methods.dart';
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
-  AuthCubit(FirestoreMethods methods)
-      : _methods = methods,
-        super(const AuthState());
+  AuthCubit(this._methods) : super(const AuthState());
 
   final FirestoreMethods _methods;
   final FirebaseAuth _auth = FirebaseAuth.instance;
