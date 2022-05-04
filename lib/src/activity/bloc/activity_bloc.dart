@@ -17,10 +17,9 @@ class ActivityBloc extends Bloc<ActivityEvent, ActivityState> {
   User auth;
 
   ActivityBloc(
-    FirestoreMethods methods, {
+    this._methods, {
     required this.auth,
-  })  : _methods = methods,
-        super(const ActivityState()) {
+  }) : super(const ActivityState()) {
     on<ActivityFetched>(
       (event, emit) async {
         if (state.hasReachedMax || _isFetching) return;

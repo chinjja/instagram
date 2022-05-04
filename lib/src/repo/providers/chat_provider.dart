@@ -2,19 +2,15 @@ import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:instagram/src/repo/models/model.dart';
-import 'package:instagram/src/repo/providers/provider.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
-import 'package:instagram/src/resources/storage_methods.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
 
 class ChatProvider {
   static const _chats = 'chats';
 
-  ChatProvider({required this.storage, required this.messages});
+  ChatProvider();
   final _firestore = FirebaseFirestore.instance;
-  final MessageProvider messages;
-  final StorageMethods storage;
 
   Future<Chat> create({
     required Set<String> members,
@@ -32,9 +28,8 @@ class ChatProvider {
         throw 'direct chat requires two member';
       }
 
-      final exists =
-          await existsDirectChat(uid: members.first, to: members.last).first;
-      if (exists) {
+      final chat = await findDirectChat(uid: members.first, to: members.last);
+      if (chat != null) {
         throw 'direct exists';
       }
     }
@@ -90,18 +85,6 @@ class ChatProvider {
     return list.join('-');
   }
 
-  Stream<bool> existsDirectChat({
-    required String uid,
-    required String to,
-  }) {
-    return _firestore
-        .collection(_chats)
-        .where('tag', isEqualTo: _tag([uid, to]))
-        .snapshots()
-        .map((event) => event.size == 1)
-        .defaultIfEmpty(false);
-  }
-
   Future<Chat?> findDirectChat({
     required String uid,
     required String to,
@@ -112,19 +95,6 @@ class ChatProvider {
         .get();
 
     return snapshot.size == 0 ? null : Chat.fromJson(snapshot.docs[0].data());
-  }
-
-  Stream<List<Chat>> all({required List<String> chatIds}) {
-    return FirestoreMethods.buffer(
-        chatIds,
-        (List<String> ids) => _firestore
-            .collection(_chats)
-            .where('chatId', whereIn: ids)
-            .snapshots()
-            .flatMap((value) => Stream.fromIterable(value.docs)
-                .map((doc) => Chat.fromJson(doc.data()))
-                .toList()
-                .asStream()));
   }
 
   Stream<List<Chat>> chats({required String uid}) {

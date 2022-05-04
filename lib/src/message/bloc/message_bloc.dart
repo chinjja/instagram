@@ -19,11 +19,10 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
   final _date = DateTime.now();
 
   MessageBloc(
-    FirestoreMethods methods, {
+    this._methods, {
     required this.auth,
     required this.info,
-  })  : _methods = methods,
-        super(const MessageState()) {
+  }) : super(const MessageState()) {
     on<MessageSubscripted>(
       (event, emit) async {
         final chat = event.chat;
@@ -123,7 +122,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
           );
           add(MessageSubscripted(chat: chat));
         }
-        await _methods.messages.send(
+        await _methods.messages.create(
           chatId: chat.chatId,
           uid: auth.uid,
           text: event.text,
