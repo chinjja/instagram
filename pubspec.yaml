@@ -29,16 +29,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  firebase_core: ^1.22.0
-  firebase_auth: ^3.8.0
-  firebase_storage: ^10.3.8
-  cloud_firestore: ^3.4.7
-  rxdart: ^0.27.5
+  firebase_core: ^2.13.0
+  firebase_auth: ^4.6.1
+  firebase_storage: ^11.2.1
+  cloud_firestore: ^4.7.1
+  rxdart: ^0.27.7
   image: ^3.2.0
   image_picker: ^0.8.5+3
   uuid: ^3.0.6
   intl: ^0.17.0
-  google_sign_in: ^5.4.1
+  google_sign_in: ^6.1.2
   tuple: ^2.0.0
   flutter_linkify: ^5.0.2
   url_launcher: ^6.1.5
