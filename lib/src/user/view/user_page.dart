@@ -176,10 +176,10 @@ class _UserViewState extends State<UserView> {
   }
 
   Widget _portraitTab() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
-        children: const [
+        children: [
           SizedBox(
             height: 160,
           ),
@@ -281,13 +281,13 @@ class UserHeader extends StatelessWidget {
   Widget _tap(
       {required int value, required String name, void Function()? onTap}) {
     return InkWell(
+      onTap: onTap,
       child: Column(
         children: [
           Text('$value'),
           Text(name),
         ],
       ),
-      onTap: onTap,
     );
   }
 
@@ -450,7 +450,7 @@ class UserWebsiteLink extends StatelessWidget {
           if (await canLaunch(link.url)) {
             await launch(link.url);
           } else {
-            showSnackbar(context, 'Cannot launch ' + link.url);
+            showSnackbar(context, 'Cannot launch ${link.url}');
           }
         },
       ),

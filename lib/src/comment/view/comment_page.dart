@@ -87,7 +87,7 @@ class CommentView extends StatelessWidget {
 class CommentList extends StatefulWidget {
   const CommentList({
     Key? key,
-    required final this.state,
+    required this.state,
   }) : super(key: key);
 
   final CommentState state;

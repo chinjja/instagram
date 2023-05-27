@@ -48,10 +48,10 @@ class CommentBaseCard extends StatelessWidget {
                 children: [
                   RichText(
                     text: TextSpan(
-                      text: (user?.username ?? '') + ' ',
+                      text: '${user?.username ?? ''} ',
                       style: Theme.of(context)
                           .textTheme
-                          .bodyText1
+                          .bodyLarge
                           ?.copyWith(fontWeight: FontWeight.bold),
                       children: [
                         TextSpan(

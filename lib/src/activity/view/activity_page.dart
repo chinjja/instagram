@@ -59,7 +59,7 @@ class ActivityView extends StatelessWidget {
 class ActivityList extends StatefulWidget {
   const ActivityList({
     Key? key,
-    required final this.state,
+    required this.state,
   }) : super(key: key);
 
   final ActivityState state;

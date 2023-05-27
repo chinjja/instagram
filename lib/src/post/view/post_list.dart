@@ -6,7 +6,7 @@ import 'package:instagram/src/post/view/post_card.dart';
 class PostList extends StatefulWidget {
   const PostList({
     Key? key,
-    required final this.state,
+    required this.state,
   }) : super(key: key);
 
   final PostState state;

@@ -27,7 +27,7 @@ class _AddPostViewState extends State<AddPostView> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance?.addPostFrameCallback((timeStamp) async {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       final image = await pickImageData(ImageSource.gallery);
       if (image != null) {
         setState(() {
@@ -80,8 +80,8 @@ class _AddPostViewState extends State<AddPostView> {
                     height: 100,
                     child: _image == null
                         ? Container(
-                            child: const Icon(Icons.upload),
                             decoration: BoxDecoration(border: Border.all()),
+                            child: const Icon(Icons.upload),
                           )
                         : Image.memory(_image!),
                   ),

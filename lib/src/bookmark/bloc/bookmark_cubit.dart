@@ -1,8 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:instagram/src/repo/models/bookmark.dart';
 import 'package:instagram/src/repo/models/model.dart';
-import 'package:instagram/src/repo/models/user.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 
 part 'bookmark_state.dart';

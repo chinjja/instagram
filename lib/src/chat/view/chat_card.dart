@@ -24,6 +24,7 @@ class ChatCard extends StatelessWidget {
     }
 
     return InkWell(
+      onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
@@ -73,7 +74,6 @@ class ChatCard extends StatelessWidget {
           ],
         ),
       ),
-      onTap: onTap,
     );
   }
 

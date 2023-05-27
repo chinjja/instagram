@@ -135,10 +135,10 @@ class PostCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: RichText(
                     text: TextSpan(
-                      text: (post.user?.username ?? '') + ' ',
+                      text: '${post.user?.username ?? ''} ',
                       style: Theme.of(context)
                           .textTheme
-                          .bodyText1
+                          .bodyLarge
                           ?.copyWith(fontWeight: FontWeight.bold),
                       children: [
                         TextSpan(

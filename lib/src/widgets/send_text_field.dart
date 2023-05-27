@@ -72,9 +72,9 @@ class _SendTextFieldState extends State<SendTextField> {
                     backgroundImage: networkImage(user.photoUrl),
                   ),
                   TextButton(
-                    child: Text(widget.sendText),
                     onPressed:
                         controller.text.trim().isEmpty ? null : () => _summit(),
+                    child: Text(widget.sendText),
                   ),
                 ],
               )),

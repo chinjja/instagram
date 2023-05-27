@@ -7,7 +7,6 @@ import 'package:instagram/src/repo/models/model.dart';
 import 'package:instagram/src/repo/providers/provider.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/resources/storage_methods.dart';
-import 'package:uuid/uuid.dart';
 import 'package:image/image.dart';
 
 class PostProvider {
