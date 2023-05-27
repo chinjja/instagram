@@ -205,6 +205,15 @@ class UserProvider {
     );
   }
 
+  Future<void> updateFcmToken({
+    required String uid,
+    required String? token,
+  }) async {
+    await _firestore.collection('users').doc(uid).update({
+      'fcmToken': token,
+    });
+  }
+
   Future<bool> create(UserCredential credential) async {
     final user = credential.user!;
     final data = await _firestore

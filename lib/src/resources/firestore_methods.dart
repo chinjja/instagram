@@ -14,6 +14,7 @@ class FirestoreMethods {
     required this.chats,
     required this.messages,
     required this.bookmarks,
+    required this.fcmProvider,
   });
   final UserProvider users;
   final PostProvider posts;
@@ -23,6 +24,7 @@ class FirestoreMethods {
   final ChatProvider chats;
   final MessageProvider messages;
   final BookmarkProvider bookmarks;
+  final FcmProvider fcmProvider;
 
   static Stream<List<R>> buffer<T, R>(
     List<T> list,

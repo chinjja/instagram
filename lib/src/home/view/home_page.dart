@@ -1,6 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:instagram/main.dart';
 import 'package:instagram/src/auth/bloc/auth_cubit.dart';
 import 'package:instagram/src/bookmark/view/bookmark_page.dart';
 import 'package:instagram/src/home/cubit/home_cubit.dart';
@@ -40,6 +43,24 @@ class HomeView extends StatefulWidget {
 class _HomeViewState extends State<HomeView> {
   final controller = PageController();
   int tab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future _init() async {
+    final user = FirebaseAuth.instance.currentUser!;
+    await FirebaseMessaging.instance.requestPermission();
+    final token = await FirebaseMessaging.instance.getToken();
+    if (token != null) {
+      userProvider.updateFcmToken(uid: user.uid, token: token);
+    }
+    FirebaseMessaging.instance.onTokenRefresh.listen((token) {
+      userProvider.updateFcmToken(uid: user.uid, token: token);
+    });
+  }
 
   @override
   void dispose() {
