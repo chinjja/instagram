@@ -37,12 +37,12 @@ void main() async {
 
 final _storage = StorageMethods();
 final _commentProvider = CommentProvider();
-final _userProvider = UserProvider(storage: _storage);
+final userProvider = UserProvider(storage: _storage);
 final _bookmarkProvider = BookmarkProvider();
 final _likeProvider = LikeProvider();
 final _activityProvider = ActivityProvider();
 final _firestore = FirestoreMethods(
-  users: _userProvider,
+  users: userProvider,
   posts: PostProvider(
     storage: _storage,
     comments: _commentProvider,
@@ -56,4 +56,5 @@ final _firestore = FirestoreMethods(
   chats: ChatProvider(),
   messages: MessageProvider(),
   bookmarks: _bookmarkProvider,
+  fcmProvider: FcmProvider(),
 );

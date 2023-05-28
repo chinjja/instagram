@@ -7,3 +7,4 @@ export 'message_provider.dart';
 export 'post_provider.dart';
 export 'token_provider.dart';
 export 'user_provider.dart';
+export 'fcm_provider.dart';
