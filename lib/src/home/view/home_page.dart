@@ -50,11 +50,16 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
-    _init();
+    final s = FirebaseAuth.instance.authStateChanges().listen(
+      (user) {
+        if (user == null) return;
+        _init(user);
+      },
+    );
+    _subscriptions.add(s);
   }
 
-  Future _init() async {
-    final user = FirebaseAuth.instance.currentUser!;
+  Future _init(User user) async {
     await FirebaseMessaging.instance.requestPermission();
     final token = await FcmProvider().getToken();
     if (token != null) {
