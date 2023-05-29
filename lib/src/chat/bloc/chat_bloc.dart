@@ -18,8 +18,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     required this.auth,
   }) : super(const ChatState()) {
     on<ChatSubscriptionRequested>(
-      (event, emit) {
+      (event, emit) async {
         emit(state.copyWith(status: ChatStatus.loading));
+        final chats = await _methods.chats.chats(uid: auth.uid).first;
+        if (chats.isEmpty) {
+          emit(state.copyWith(status: ChatStatus.success, list: []));
+        }
         return emit.forEach(
             _methods.chats.chats(uid: auth.uid).flatMap((chats) =>
                 Stream.fromIterable(chats).flatMap((chat) => Rx.combineLatest3(
