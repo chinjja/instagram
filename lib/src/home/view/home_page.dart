@@ -55,7 +55,10 @@ class _HomeViewState extends State<HomeView> {
   Future _init() async {
     final user = FirebaseAuth.instance.currentUser!;
     await FirebaseMessaging.instance.requestPermission();
-    final token = await FirebaseMessaging.instance.getToken();
+    final token = await FirebaseMessaging.instance.getToken(
+      vapidKey:
+          'BBfFhncqyverYPK2ex6wYX-Ofo2CPol5VpanTBmU9st3pSP6NC20G-yMY8pxkDrloBFghoPlbUmCY-JvzTImsrg',
+    );
     if (token != null) {
       userProvider.updateFcmToken(uid: user.uid, token: token);
     }
