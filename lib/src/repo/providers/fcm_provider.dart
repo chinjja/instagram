@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
@@ -16,6 +17,11 @@ class FcmProvider {
     Map<String, dynamic> jsonMap = json.decode(jsonString);
     _fcmServiceKey = jsonMap['fcm_server_key'];
   }
+
+  Future<String?> getToken() => FirebaseMessaging.instance.getToken(
+        vapidKey:
+            'BBfFhncqyverYPK2ex6wYX-Ofo2CPol5VpanTBmU9st3pSP6NC20G-yMY8pxkDrloBFghoPlbUmCY-JvzTImsrg',
+      );
 
   Future<bool> send({
     required List<String> userTokens,

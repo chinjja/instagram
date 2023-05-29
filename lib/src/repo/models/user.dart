@@ -13,7 +13,7 @@ class User extends Equatable {
   final String? photoUrl;
   final List<String> following;
   final int postCount;
-  final String? fcmToken;
+  final Map<String, int> fcmToken;
 
   const User({
     required this.email,
@@ -24,7 +24,7 @@ class User extends Equatable {
     this.website,
     required this.following,
     required this.postCount,
-    this.fcmToken,
+    this.fcmToken = const {},
   });
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);

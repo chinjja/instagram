@@ -9,6 +9,7 @@ import 'package:instagram/src/bookmark/view/bookmark_page.dart';
 import 'package:instagram/src/home/cubit/home_cubit.dart';
 import 'package:instagram/src/activity/view/activity_page.dart';
 import 'package:instagram/src/chat/view/chat_page.dart';
+import 'package:instagram/src/repo/providers/provider.dart';
 import 'package:instagram/src/search/view/search_page.dart';
 import 'package:instagram/src/post/view/view.dart';
 import 'package:instagram/src/user/view/user_page.dart';
@@ -55,10 +56,7 @@ class _HomeViewState extends State<HomeView> {
   Future _init() async {
     final user = FirebaseAuth.instance.currentUser!;
     await FirebaseMessaging.instance.requestPermission();
-    final token = await FirebaseMessaging.instance.getToken(
-      vapidKey:
-          'BBfFhncqyverYPK2ex6wYX-Ofo2CPol5VpanTBmU9st3pSP6NC20G-yMY8pxkDrloBFghoPlbUmCY-JvzTImsrg',
-    );
+    final token = await FcmProvider().getToken();
     if (token != null) {
       userProvider.updateFcmToken(uid: user.uid, token: token);
     }

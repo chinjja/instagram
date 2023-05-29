@@ -129,10 +129,8 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
         );
         final otherUid = [...chat.users.where((e) => e != auth.uid)];
         final users = await _methods.users.all(uids: otherUid).first;
-        final tokens = users
-            .map((e) => e.fcmToken)
-            .where((e) => e != null)
-            .cast<String>()
+        final tokens = await Stream.fromIterable(users)
+            .flatMap((e) => Stream.fromIterable(e.fcmToken.keys))
             .toList();
         if (tokens.isNotEmpty) {
           _methods.fcmProvider.send(
