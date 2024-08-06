@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
@@ -40,7 +41,7 @@ class FcmProvider {
             'notification': {
               'title': title,
               'body': body,
-              'click_action': 'https://instagram-21e39.web.app',
+              'click_action': Uri.base.toString(),
             },
             'data': {'chatId': chatId},
             'content_available': true,
@@ -51,7 +52,7 @@ class FcmProvider {
           }));
       return response.statusCode >= 200 && response.statusCode < 300;
     } catch (e) {
-      print('error $e');
+      log('error $e');
       return false;
     }
   }
