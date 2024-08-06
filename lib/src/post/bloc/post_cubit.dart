@@ -90,7 +90,14 @@ class PostCubit extends Cubit<PostState> {
   }
 
   Future<void> refresh() async {
-    if (fixed != null) return;
+    if (fixed != null) {
+      emit(state.copyWith(
+        status: PostStatus.success,
+        posts: [...await _map(fixed!)],
+        hasReachedMax: true,
+      ));
+      return;
+    }
 
     emit(state.copyWith(
       status: PostStatus.loading,

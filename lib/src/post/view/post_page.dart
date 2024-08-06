@@ -81,13 +81,12 @@ class PostView extends StatelessWidget {
       body: BlocBuilder<PostCubit, PostState>(
         builder: (context, state) {
           switch (state.status) {
-            case PostStatus.loading:
-              return const PostLoading();
             case PostStatus.success:
               return PostList(state: state);
             case PostStatus.failure:
-            default:
               return const PostError();
+            default:
+              return const PostLoading();
           }
         },
       ),
