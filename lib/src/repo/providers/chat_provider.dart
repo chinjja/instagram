@@ -119,6 +119,20 @@ class ChatProvider {
         .map((snapshot) => ChatUser.fromJson(snapshot.data()!));
   }
 
+  Stream<ChatUser?> userOrNull({required String chatId, required String uid}) {
+    return _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('users')
+        .doc(uid)
+        .snapshots()
+        .map((snapshot) {
+      final data = snapshot.data();
+      if (data == null) return null;
+      return ChatUser.fromJson(data);
+    });
+  }
+
   Future<ChatUser?> getUser(
       {required String chatId, required String uid}) async {
     final snapshot = await _firestore

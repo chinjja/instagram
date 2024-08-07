@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:instagram/app.dart';
 import 'package:instagram/src/auth/bloc/auth_cubit.dart';
+import 'package:instagram/src/post/bloc/new_message_cubit.dart';
 import 'package:instagram/src/repo/providers/provider.dart';
 import 'package:instagram/src/resources/firestore_methods.dart';
 import 'package:instagram/src/resources/storage_methods.dart';
@@ -27,8 +28,13 @@ void main() async {
         RepositoryProvider.value(value: _storage),
         RepositoryProvider.value(value: _firestore),
       ],
-      child: BlocProvider(
-        create: (context) => AuthCubit(_firestore),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (context) => AuthCubit(_firestore)),
+          BlocProvider(
+              create: (context) =>
+                  NewMessageCubit(context.read<AuthCubit>(), _firestore)),
+        ],
         child: const App(),
       ),
     ),
@@ -37,12 +43,12 @@ void main() async {
 
 final _storage = StorageMethods();
 final _commentProvider = CommentProvider();
-final _userProvider = UserProvider(storage: _storage);
+final userProvider = UserProvider(storage: _storage);
 final _bookmarkProvider = BookmarkProvider();
 final _likeProvider = LikeProvider();
 final _activityProvider = ActivityProvider();
 final _firestore = FirestoreMethods(
-  users: _userProvider,
+  users: userProvider,
   posts: PostProvider(
     storage: _storage,
     comments: _commentProvider,
@@ -56,4 +62,5 @@ final _firestore = FirestoreMethods(
   chats: ChatProvider(),
   messages: MessageProvider(),
   bookmarks: _bookmarkProvider,
+  fcmProvider: FcmProvider(),
 );

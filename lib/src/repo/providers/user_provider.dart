@@ -205,6 +205,42 @@ class UserProvider {
     );
   }
 
+  Future<void> updateFcmToken({
+    required String uid,
+    required String token,
+  }) async {
+    final user = await get(uid: uid, force: true);
+    if (user == null) return;
+
+    final now = DateTime.now();
+    final map = {
+      ...user.fcmToken,
+      token: now.millisecondsSinceEpoch,
+    };
+    final at = now.subtract(const Duration(days: 7));
+    map.removeWhere((token, date) =>
+        DateTime.fromMillisecondsSinceEpoch(date).isBefore(at));
+    await _firestore.collection('users').doc(uid).update({
+      'fcmToken': map,
+    });
+  }
+
+  Future<void> removeFcmToken({
+    required String uid,
+    required String token,
+  }) async {
+    final user = await get(uid: uid, force: true);
+    if (user == null) return;
+
+    final map = {
+      ...user.fcmToken,
+    };
+    map.remove(token);
+    await _firestore.collection('users').doc(uid).update({
+      'fcmToken': map,
+    });
+  }
+
   Future<bool> create(UserCredential credential) async {
     final user = credential.user!;
     final data = await _firestore

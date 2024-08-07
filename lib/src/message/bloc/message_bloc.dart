@@ -127,6 +127,19 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
           uid: auth.uid,
           text: event.text,
         );
+        final otherUid = [...chat.users.where((e) => e != auth.uid)];
+        final users = await _methods.users.all(uids: otherUid).first;
+        final tokens = await Stream.fromIterable(users)
+            .flatMap((e) => Stream.fromIterable(e.fcmToken.keys))
+            .toList();
+        if (tokens.isNotEmpty) {
+          _methods.fcmProvider.send(
+            userTokens: tokens,
+            title: '${auth.username}님이 메시지를 보냈습니다.',
+            body: event.text,
+            chatId: chat.chatId,
+          );
+        }
       },
     );
   }

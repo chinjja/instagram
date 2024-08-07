@@ -65,6 +65,13 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signout() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final token = await _methods.fcmProvider.getToken();
+      if (token != null) {
+        await _methods.users.removeFcmToken(uid: user.uid, token: token);
+      }
+    }
     await _auth.signOut();
     emit(state.copyWith(status: AuthStatus.unauthenticated, user: null));
   }

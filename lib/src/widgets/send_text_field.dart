@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:instagram/src/repo/models/model.dart';
 import 'package:instagram/src/utils/utils.dart';
@@ -29,7 +30,11 @@ class _SendTextFieldState extends State<SendTextField> {
   Widget build(BuildContext context) {
     final user = widget.user;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.only(
+        left: 8,
+        right: 8,
+        bottom: kIsWeb ? 8 : 0,
+      ),
       child: Stack(
         children: [
           ConstrainedBox(

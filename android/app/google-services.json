@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "479650638727-75mlsjd1cm0lqdjn6fjjouib02ia8lfc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.chinjja.instagram",
+            "certificate_hash": "32fd08c9f52df92af7311d43dff7dfe18492838a"
+          }
+        },
+        {
+          "client_id": "479650638727-j9snsefdttpvsl21gm7dimne65c47lag.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.chinjja.instagram",
+            "certificate_hash": "18064db6fa08023636f042175297958e1ba4aee9"
+          }
+        },
+        {
           "client_id": "479650638727-1kn5o5rnn6irdl04fhs0pelualepdjej.apps.googleusercontent.com",
           "client_type": 3
         }

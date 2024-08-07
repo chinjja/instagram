@@ -1,15 +1,20 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:instagram/main.dart';
 import 'package:instagram/src/auth/bloc/auth_cubit.dart';
 import 'package:instagram/src/bookmark/view/bookmark_page.dart';
 import 'package:instagram/src/home/cubit/home_cubit.dart';
 import 'package:instagram/src/activity/view/activity_page.dart';
 import 'package:instagram/src/chat/view/chat_page.dart';
+import 'package:instagram/src/repo/providers/provider.dart';
 import 'package:instagram/src/search/view/search_page.dart';
 import 'package:instagram/src/post/view/view.dart';
 import 'package:instagram/src/user/view/user_page.dart';
 import 'package:instagram/src/widgets/keep_alive_widget.dart';
+import 'package:rxdart/rxdart.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -40,9 +45,57 @@ class HomeView extends StatefulWidget {
 class _HomeViewState extends State<HomeView> {
   final controller = PageController();
   int tab = 0;
+  final _subscriptions = CompositeSubscription();
+
+  @override
+  void initState() {
+    super.initState();
+    final s = FirebaseAuth.instance.authStateChanges().listen(
+      (user) {
+        if (user == null) return;
+        _init(user);
+      },
+    );
+    _subscriptions.add(s);
+  }
+
+  Future _init(User user) async {
+    await FirebaseMessaging.instance.requestPermission();
+    final token = await FcmProvider().getToken();
+    if (token != null) {
+      userProvider.updateFcmToken(uid: user.uid, token: token);
+    }
+    if (mounted) {
+      final a = FirebaseMessaging.instance.onTokenRefresh.listen((token) {
+        userProvider.updateFcmToken(uid: user.uid, token: token);
+      });
+
+      _subscriptions.add(a);
+      final b = FirebaseMessaging.onMessage
+          .where((event) => event.notification != null)
+          .cast<RemoteMessage>()
+          .listen((message) {
+        showDialog(
+          context: context,
+          barrierColor: null,
+          barrierDismissible: false,
+          builder: (context) {
+            final notification = message.notification;
+            return NotificationDialog(
+              chatId: message.data['chatId']!,
+              title: notification?.title ?? '',
+              body: notification?.body ?? '',
+            );
+          },
+        );
+      });
+      _subscriptions.add(b);
+    }
+  }
 
   @override
   void dispose() {
+    _subscriptions.dispose();
     controller.dispose();
     super.dispose();
   }
@@ -162,6 +215,49 @@ class _NavViewState extends State<NavView> {
         page == nav.index ? active : inactive,
       ),
       backgroundColor: theme.canvasColor,
+    );
+  }
+}
+
+class NotificationDialog extends StatefulWidget {
+  final String chatId;
+  final String title;
+  final String body;
+
+  const NotificationDialog({
+    super.key,
+    required this.chatId,
+    required this.title,
+    required this.body,
+  });
+
+  @override
+  State<NotificationDialog> createState() => _NotificationDialogState();
+}
+
+class _NotificationDialogState extends State<NotificationDialog> {
+  @override
+  Widget build(BuildContext context) {
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    });
+    return Align(
+      alignment: Alignment.topCenter,
+      child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).pop();
+        },
+        child: Card(
+          elevation: 4,
+          child: ListTile(
+            leading: const FlutterLogo(),
+            title: Text(widget.title),
+            subtitle: Text(widget.body),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:instagram/src/auth/bloc/auth_cubit.dart';
+import 'package:instagram/src/post/bloc/new_message_cubit.dart';
 import 'package:instagram/src/repo/models/model.dart';
 import 'package:instagram/src/post/view/add_post_view.dart';
 import 'package:instagram/src/post/bloc/post_cubit.dart';
@@ -75,22 +76,47 @@ class PostView extends StatelessWidget {
                       }
                     },
                     icon: const Icon(Icons.add)),
-                IconButton(onPressed: onShowChat, icon: const Icon(Icons.send)),
+                _ChatButton(onPressed: onShowChat),
               ],
       ),
       body: BlocBuilder<PostCubit, PostState>(
         builder: (context, state) {
           switch (state.status) {
-            case PostStatus.loading:
-              return const PostLoading();
             case PostStatus.success:
               return PostList(state: state);
             case PostStatus.failure:
-            default:
               return const PostError();
+            default:
+              return const PostLoading();
           }
         },
       ),
     );
+  }
+}
+
+class _ChatButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  const _ChatButton({
+    super.key,
+    this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasNewMessage =
+        context.select((NewMessageCubit cubit) => cubit.state);
+    Widget child = IconButton(
+      onPressed: onPressed,
+      icon: Icon(Icons.send),
+    );
+
+    if (hasNewMessage) {
+      child = Badge(
+        label: const Text("N"),
+        child: child,
+      );
+    }
+    return child;
   }
 }
