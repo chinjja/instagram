@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 class FcmProvider {
@@ -13,10 +12,8 @@ class FcmProvider {
   }
 
   Future _init() async {
-    String jsonString =
-        await rootBundle.loadString('assets/google-services.json');
-    Map<String, dynamic> jsonMap = json.decode(jsonString);
-    _fcmServiceKey = jsonMap['fcm_server_key'];
+    _fcmServiceKey =
+        'AAAAb61n64c:APA91bFpLYd5UMp1xmk30yIc43zXxzCXkiCDDrkuH09NLUYttbsArJjcFuV1NDFuYr6YATTwSR6TgCh-Jm0JsF5MX-HPyJFpXRsJmJqocBZEmkET0z9Sq2zXOgQR1RR4AHF4L-LmQPx8';
   }
 
   Future<String?> getToken() => FirebaseMessaging.instance.getToken(
